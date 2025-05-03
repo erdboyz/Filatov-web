@@ -42,7 +42,7 @@
                         {% endif %}
                     </div>
                     <div class="card-footer text-muted">
-                        Автор: {{ post.author.username }}
+                        Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.username }}</a>
                     </div>
                 </div>
             {% endfor %}

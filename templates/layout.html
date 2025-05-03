@@ -31,7 +31,11 @@
                 <ul class="navbar-nav">
                     {% if session.user_id %}
                     <li class="nav-item">
-                        <span class="nav-link text-light">Привет, {{ session.username }}!</span>
+                        <a class="nav-link" href="{{ url_for('profile', user_id=session.user_id) }}">Профиль</a>
+                    </li>
+                    <li class="nav-item">
+                        {# Display nickname if available, otherwise username #}
+                        <span class="nav-link text-light">Привет, {{ session.get('nickname') or session.get('username') }}!</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">Выйти</a>

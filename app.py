@@ -178,6 +178,70 @@ def create_post():
     return redirect(url_for('index'))
 
 
+# Профиль пользователя
+@app.route('/profile/<int:user_id>')
+@login_required
+def profile(user_id):
+    user = User.query.get_or_404(user_id)
+    posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).all()
+    return render_template('profile.html', user=user, posts=posts)
+
+
+# Редактирование профиля пользователя
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        new_username = request.form.get('username')
+        email = request.form.get('email')
+
+        # Проверки данных
+        if not new_username or not email:
+            flash('Имя пользователя и email обязательны.', 'error')
+        elif new_username != user.username and User.query.filter_by(username=new_username).first():
+             flash('Данное имя пользователя уже занято.', 'error')
+        else:
+            user.username = new_username
+            user.email = email
+            db.session.commit()
+            session['username'] = user.username # Update username in session
+            flash('Профиль успешно обновлен!', 'success')
+            return redirect(url_for('profile', user_id=user.id))
+
+    return render_template('edit_profile.html', user=user)
+
+
+# Изменение пароля
+@app.route('/profile/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_new_password = request.form.get('confirm_new_password')
+
+        # Проверки данных
+        if not old_password or not new_password or not confirm_new_password:
+            flash('Все поля обязательны для заполнения.', 'error')
+        elif not user.check_password(old_password):
+            flash('Неверный старый пароль.', 'error')
+        elif new_password != confirm_new_password:
+            flash('Новые пароли не совпадают.', 'error')
+        else:
+            user.set_password(new_password)
+            db.session.commit()
+            flash('Пароль успешно изменен!', 'success')
+            return redirect(url_for('profile', user_id=user.id))
+
+    return render_template('change_password.html')
+
+
 # Обработчик ошибки 404
 @app.errorhandler(404)
 def page_not_found(e):

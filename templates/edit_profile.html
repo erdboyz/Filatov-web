@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+
+{% block title %}Редактировать профиль{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Редактировать профиль</h1>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Имя пользователя:</label>
+                <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        </form>
+    </div>
+{% endblock %}
