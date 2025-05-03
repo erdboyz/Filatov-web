@@ -1,0 +1,51 @@
+/* Основные стили */
+body {
+    font-family: 'Roboto', 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Медиа-миниатюры */
+.media-thumbnail {
+    cursor: pointer;
+    transition: opacity 0.2s;
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.media-thumbnail:hover {
+    opacity: 0.9;
+}
+
+/* Модальное окно для медиа */
+#mediaContent img {
+    max-width: 100%;
+    max-height: 80vh;
+}
+
+#mediaContent video {
+    max-width: 100%;
+    max-height: 80vh;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 992px) {
+    .col-md-4 {
+        margin-top: 2rem;
+    }
+}

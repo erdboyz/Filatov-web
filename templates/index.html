@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block title %}Главная - Filatov{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Лента записей</h1>
+
+        {% if posts %}
+            {% for post in posts %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ post.title }}</h5>
+                        <small class="text-muted">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ post.content }}</p>
+
+                        {% if post.media_file %}
+                            <div class="mt-3">
+                                {% if post.media_type == 'image' %}
+                                    <img src="{{ url_for('static', filename='uploads/' + post.media_file) }}"
+                                         class="img-fluid mb-2 media-thumbnail"
+                                         alt="Изображение к посту"
+                                         data-media-type="image"
+                                         data-media-src="{{ url_for('static', filename='uploads/' + post.media_file) }}">
+                                {% elif post.media_type == 'video' %}
+                                    <div class="ratio ratio-16x9 mb-2">
+                                        <video class="media-thumbnail" controls>
+                                            <source src="{{ url_for('static', filename='uploads/' + post.media_file) }}" type="video/mp4">
+                                            Ваш браузер не поддерживает видео.
+                                        </video>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary media-open-btn"
+                                            data-media-type="video"
+                                            data-media-src="{{ url_for('static', filename='uploads/' + post.media_file) }}">
+                                        Открыть в полном размере
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer text-muted">
+                        Автор: {{ post.author.username }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                Пока нет записей. Будьте первым, кто опубликует запись!
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Новая запись</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('create_post') }}" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заголовок</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Содержание</label>
+                        <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="media" class="form-label">Медиа файл (необязательно)</label>
+                        <input type="file" class="form-control" id="media" name="media" accept="image/jpeg,image/png,image/gif,video/mp4,video/avi,video/mov,video/webm">
+                        <div class="form-text">Поддерживаемые форматы: JPG, PNG, GIF, MP4, MOV, AVI, WEBM. Максимальный размер: 100 МБ.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Опубликовать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
