@@ -57,7 +57,19 @@
             <div class="card-header">
                 <h5 class="mb-0">Информация о пользователе</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body text-center">
+                {% if user.avatar %}
+                    <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" 
+                         class="rounded-circle img-thumbnail mb-3" 
+                         style="width: 150px; height: 150px; object-fit: cover;" 
+                         alt="Аватар пользователя">
+                {% else %}
+                    <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                         style="width: 150px; height: 150px;">
+                        <span class="display-4 text-white">{{ user.username[0].upper() }}</span>
+                    </div>
+                {% endif %}
+                
                 <h4>{{ user.nickname or user.username }}</h4>
                 <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
                 <p><strong>Email:</strong> {{ user.email }}</p>

@@ -11,12 +11,14 @@ app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['AVATAR_FOLDER'] = 'static/avatars'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB лимит
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['jpeg', 'jpg', 'png', 'gif']
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = ['mp4', 'mov', 'avi', 'webm']
 
-# Создаем директорию для загрузок, если она не существует
+# Создаем директории для загрузок, если они не существуют
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
 
 # Инициализируем базу данных с нашим приложением
 db.init_app(app)
@@ -206,6 +208,32 @@ def edit_profile():
         else:
             user.username = new_username
             user.email = email
+            
+            # Обработка загрузки аватара
+            avatar_file = request.files.get('avatar')
+            if avatar_file and avatar_file.filename:
+                file_ext = avatar_file.filename.rsplit('.', 1)[1].lower() if '.' in avatar_file.filename else ''
+                
+                if file_ext not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                    flash('Недопустимый формат файла для аватара. Разрешены только изображения (JPEG, PNG, GIF).', 'error')
+                else:
+                    # Удаляем старый аватар, если он существует
+                    if user.avatar and os.path.exists(os.path.join(app.config['AVATAR_FOLDER'], user.avatar)):
+                        try:
+                            os.remove(os.path.join(app.config['AVATAR_FOLDER'], user.avatar))
+                        except Exception as e:
+                            print(f"Ошибка при удалении старого аватара: {str(e)}")
+                    
+                    # Генерируем уникальное имя файла
+                    avatar_filename = f"avatar_{user_id}_{str(uuid.uuid4())}.{file_ext}"
+                    avatar_path = os.path.join(app.config['AVATAR_FOLDER'], avatar_filename)
+                    
+                    try:
+                        avatar_file.save(avatar_path)
+                        user.avatar = avatar_filename
+                    except Exception as e:
+                        flash(f'Ошибка при загрузке аватара: {str(e)}', 'error')
+            
             db.session.commit()
             session['username'] = user.username # Update username in session
             flash('Профиль успешно обновлен!', 'success')

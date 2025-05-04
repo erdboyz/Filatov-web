@@ -6,16 +6,68 @@
     <div class="container">
         <h1>Редактировать профиль</h1>
 
-        <form method="POST">
-            <div class="form-group">
-                <label for="username">Имя пользователя:</label>
-                <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row mb-4">
+                <div class="col-md-4 text-center">
+                    <div class="mb-3">
+                        {% if user.avatar %}
+                            <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" 
+                                 class="rounded-circle img-thumbnail mb-3" 
+                                 style="width: 150px; height: 150px; object-fit: cover;" 
+                                 alt="Текущий аватар" id="avatar-preview">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 150px; height: 150px;" id="avatar-placeholder">
+                                <span class="display-4 text-white">{{ user.username[0].upper() }}</span>
+                            </div>
+                            <img src="" class="rounded-circle img-thumbnail mb-3 d-none" 
+                                 style="width: 150px; height: 150px; object-fit: cover;" 
+                                 alt="Предпросмотр аватара" id="avatar-preview">
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="avatar" class="form-label">Загрузить аватар</label>
+                            <input type="file" class="form-control" id="avatar" name="avatar" accept="image/jpeg,image/png,image/gif">
+                            <div class="form-text">Разрешены форматы: JPG, PNG, GIF</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="form-group mb-3">
+                        <label for="username">Имя пользователя:</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
-            </div>
+            
             <button type="submit" class="btn btn-primary">Сохранить изменения</button>
         </form>
     </div>
+
+    <script>
+        // Предпросмотр аватара
+        document.getElementById('avatar').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('avatar-preview');
+                    const placeholder = document.getElementById('avatar-placeholder');
+                    
+                    if (placeholder) {
+                        placeholder.classList.add('d-none');
+                    }
+                    
+                    preview.src = event.target.result;
+                    preview.classList.remove('d-none');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 {% endblock %}
