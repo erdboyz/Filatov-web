@@ -4,7 +4,7 @@ import os
 import uuid
 import imghdr
 
-from models import db, User, Post
+from models import db, User, Post, Comment
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -57,6 +57,7 @@ def allowed_file(filename):
 @app.route('/')
 @login_required
 def index():
+    # Fetch posts with comments ordered by creation date
     posts = Post.query.order_by(Post.created_at.desc()).all()
     return render_template('index.html', posts=posts)
 
@@ -185,6 +186,7 @@ def create_post():
 @login_required
 def profile(user_id):
     user = User.query.get_or_404(user_id)
+    # Fetch user's posts with comments ordered by creation date
     posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).all()
     return render_template('profile.html', user=user, posts=posts)
 
@@ -268,6 +270,84 @@ def change_password():
             return redirect(url_for('profile', user_id=user.id))
 
     return render_template('change_password.html')
+
+
+# Создание нового комментария к посту
+@app.route('/comment/create/<int:post_id>', methods=['POST'])
+@login_required
+def create_comment(post_id):
+    post = Post.query.get_or_404(post_id)
+    content = request.form.get('content')
+    
+    if not content:
+        flash('Содержание комментария обязательно.', 'error')
+        return redirect(url_for('index'))
+    
+    comment = Comment(
+        content=content,
+        user_id=session['user_id'],
+        post_id=post_id
+    )
+    
+    db.session.add(comment)
+    db.session.commit()
+    
+    flash('Комментарий успешно добавлен!', 'success')
+    return redirect(url_for('index'))
+
+
+# Удаление комментария
+@app.route('/comment/delete/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    
+    # Проверяем, что пользователь является автором комментария или автором поста или администратором
+    user_id = session['user_id']
+    post = Post.query.get(comment.post_id)
+    
+    if comment.user_id != user_id and post.user_id != user_id and user_id != 1:
+        flash('У вас нет прав для удаления этого комментария.', 'error')
+        return redirect(url_for('index'))
+    
+    db.session.delete(comment)
+    db.session.commit()
+    
+    flash('Комментарий успешно удален!', 'success')
+    return redirect(url_for('index'))
+
+
+# Удаление поста
+@app.route('/post/delete/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    # Проверяем, что пользователь является автором поста или администратором
+    user_id = session['user_id']
+    
+    if post.user_id != user_id and user_id != 1:
+        flash('У вас нет прав для удаления этого поста.', 'error')
+        return redirect(url_for('index'))
+    
+    # Если есть медиа-файл, удаляем его
+    if post.media_file and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file)):
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file))
+        except Exception as e:
+            print(f"Ошибка при удалении медиа-файла: {str(e)}")
+    
+    # Удаляем пост (комментарии удалятся автоматически благодаря cascade)
+    db.session.delete(post)
+    db.session.commit()
+    
+    flash('Пост успешно удален!', 'success')
+    
+    # Если удаление было выполнено из профиля, возвращаемся в профиль
+    if request.referrer and 'profile' in request.referrer:
+        return redirect(url_for('profile', user_id=user_id))
+    
+    return redirect(url_for('index'))
 
 
 # Обработчик ошибки 404

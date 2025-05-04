@@ -5,7 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Filatov{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .comment-form {
+            flex: 1;
+            max-width: 70%;
+        }
+        .toggle-comments .fa-chevron-up {
+            display: none;
+        }
+        .toggle-comments[aria-expanded="true"] .fa-chevron-down {
+            display: none;
+        }
+        .toggle-comments[aria-expanded="true"] .fa-chevron-up {
+            display: inline;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -85,5 +101,33 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Toggle chevron icon for comment sections
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('.toggle-comments');
+            
+            toggleButtons.forEach(button => {
+                // Add up chevron icon
+                if (!button.querySelector('.fa-chevron-up')) {
+                    const upIcon = document.createElement('i');
+                    upIcon.className = 'fas fa-chevron-up';
+                    button.appendChild(upIcon);
+                }
+                
+                // Add click event listener to handle focus
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-bs-target');
+                    const commentSection = document.querySelector(targetId);
+                    
+                    if (commentSection && this.getAttribute('aria-expanded') === 'true') {
+                        // When expanding, scroll to make sure it's visible
+                        setTimeout(() => {
+                            commentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 150);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
