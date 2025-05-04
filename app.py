@@ -11,12 +11,14 @@ app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['AVATAR_FOLDER'] = 'static/avatars'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB лимит
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['jpeg', 'jpg', 'png', 'gif']
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = ['mp4', 'mov', 'avi', 'webm']
 
-# Создаем директорию для загрузок, если она не существует
+# Создаем директории для загрузок, если они не существуют
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
 
 # Инициализируем базу данных с нашим приложением
 db.init_app(app)
@@ -176,6 +178,96 @@ def create_post():
 
     flash('Пост успешно создан!', 'success')
     return redirect(url_for('index'))
+
+
+# Профиль пользователя
+@app.route('/profile/<int:user_id>')
+@login_required
+def profile(user_id):
+    user = User.query.get_or_404(user_id)
+    posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).all()
+    return render_template('profile.html', user=user, posts=posts)
+
+
+# Редактирование профиля пользователя
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        new_username = request.form.get('username')
+        email = request.form.get('email')
+
+        # Проверки данных
+        if not new_username or not email:
+            flash('Имя пользователя и email обязательны.', 'error')
+        elif new_username != user.username and User.query.filter_by(username=new_username).first():
+             flash('Данное имя пользователя уже занято.', 'error')
+        else:
+            user.username = new_username
+            user.email = email
+            
+            # Обработка загрузки аватара
+            avatar_file = request.files.get('avatar')
+            if avatar_file and avatar_file.filename:
+                file_ext = avatar_file.filename.rsplit('.', 1)[1].lower() if '.' in avatar_file.filename else ''
+                
+                if file_ext not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                    flash('Недопустимый формат файла для аватара. Разрешены только изображения (JPEG, PNG, GIF).', 'error')
+                else:
+                    # Удаляем старый аватар, если он существует
+                    if user.avatar and os.path.exists(os.path.join(app.config['AVATAR_FOLDER'], user.avatar)):
+                        try:
+                            os.remove(os.path.join(app.config['AVATAR_FOLDER'], user.avatar))
+                        except Exception as e:
+                            print(f"Ошибка при удалении старого аватара: {str(e)}")
+                    
+                    # Генерируем уникальное имя файла
+                    avatar_filename = f"avatar_{user_id}_{str(uuid.uuid4())}.{file_ext}"
+                    avatar_path = os.path.join(app.config['AVATAR_FOLDER'], avatar_filename)
+                    
+                    try:
+                        avatar_file.save(avatar_path)
+                        user.avatar = avatar_filename
+                    except Exception as e:
+                        flash(f'Ошибка при загрузке аватара: {str(e)}', 'error')
+            
+            db.session.commit()
+            session['username'] = user.username # Update username in session
+            flash('Профиль успешно обновлен!', 'success')
+            return redirect(url_for('profile', user_id=user.id))
+
+    return render_template('edit_profile.html', user=user)
+
+
+# Изменение пароля
+@app.route('/profile/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_new_password = request.form.get('confirm_new_password')
+
+        # Проверки данных
+        if not old_password or not new_password or not confirm_new_password:
+            flash('Все поля обязательны для заполнения.', 'error')
+        elif not user.check_password(old_password):
+            flash('Неверный старый пароль.', 'error')
+        elif new_password != confirm_new_password:
+            flash('Новые пароли не совпадают.', 'error')
+        else:
+            user.set_password(new_password)
+            db.session.commit()
+            flash('Пароль успешно изменен!', 'success')
+            return redirect(url_for('profile', user_id=user.id))
+
+    return render_template('change_password.html')
 
 
 # Обработчик ошибки 404

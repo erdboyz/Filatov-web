@@ -1,11 +1,12 @@
-{% extends "layout.html" %}
+{% extends 'layout.html' %}
 
-{% block title %}Главная - Filatov{% endblock %}
+{% block title %}Профиль - {{ user.nickname or user.username }}{% endblock %}
 
 {% block content %}
 <div class="row">
+    <!-- Posts column (left side) -->
     <div class="col-md-8">
-        <h1>Лента записей</h1>
+        <h2>Посты пользователя</h2>
 
         {% if posts %}
             {% for post in posts %}
@@ -41,40 +42,44 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="card-footer text-muted">
-                        Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.username }}</a>
-                    </div>
                 </div>
             {% endfor %}
         {% else %}
             <div class="alert alert-info">
-                Пока нет записей. Будьте первым, кто опубликует запись!
+                У пользователя пока нет записей.
             </div>
         {% endif %}
     </div>
 
+    <!-- User info column (right side) -->
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Новая запись</h5>
+                <h5 class="mb-0">Информация о пользователе</h5>
             </div>
-            <div class="card-body">
-                <form action="{{ url_for('create_post') }}" method="post" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Заголовок</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
+            <div class="card-body text-center">
+                {% if user.avatar %}
+                    <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" 
+                         class="rounded-circle img-thumbnail mb-3" 
+                         style="width: 150px; height: 150px; object-fit: cover;" 
+                         alt="Аватар пользователя">
+                {% else %}
+                    <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                         style="width: 150px; height: 150px;">
+                        <span class="display-4 text-white">{{ user.username[0].upper() }}</span>
                     </div>
-                    <div class="mb-3">
-                        <label for="content" class="form-label">Содержание</label>
-                        <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                {% endif %}
+                
+                <h4>{{ user.nickname or user.username }}</h4>
+                <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+
+                {% if user.id == session.user_id %}
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Редактировать профиль</a>
+                        <a href="{{ url_for('change_password') }}" class="btn btn-outline-secondary">Изменить пароль</a>
                     </div>
-                    <div class="mb-3">
-                        <label for="media" class="form-label">Медиа файл (необязательно)</label>
-                        <input type="file" class="form-control" id="media" name="media" accept="image/jpeg,image/png,image/gif,video/mp4,video/avi,video/mov,video/webm">
-                        <div class="form-text">Поддерживаемые форматы: JPG, PNG, GIF, MP4, MOV, AVI, WEBM. Максимальный размер: 100 МБ.</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Опубликовать</button>
-                </form>
+                {% endif %}
             </div>
         </div>
     </div>
