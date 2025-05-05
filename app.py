@@ -3,11 +3,34 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 import imghdr
+import logging
+from logging.handlers import RotatingFileHandler
+from flask_wtf.csrf import CSRFProtect
+from flask_bcrypt import Bcrypt
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-from models import db, User, Post, Comment
+from models import db, User, Post, Comment, bcrypt
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
+
+# Secure session configuration
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript from reading cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Provides some CSRF protection
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout in seconds (1 hour)
+
+# Initialize rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -22,7 +45,21 @@ os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
 
 # Инициализируем базу данных с нашим приложением
 db.init_app(app)
+bcrypt.init_app(app)
 
+# Настройка логирования
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+file_handler = RotatingFileHandler('logs/blog.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('Запуск блога')
 
 # Функция проверки, авторизован ли пользователь
 def is_authenticated():
@@ -46,11 +83,36 @@ def allowed_file(filename):
     extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
     if extension in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+        # Дополнительная проверка содержимого для изображений
         return 'image'
     elif extension in app.config['ALLOWED_VIDEO_EXTENSIONS']:
         return 'video'
 
     return None
+
+
+# Функция для проверки MIME-типа загруженного файла
+def validate_image(stream):
+    header = stream.read(512)
+    stream.seek(0)
+    format = imghdr.what(None, header)
+    if not format:
+        return None
+    return format
+
+
+# Добавляем защитные заголовки для каждого ответа
+@app.after_request
+def add_security_headers(response):
+    # Content Security Policy
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self';"
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # Enable XSS protection in browsers
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
 
 # Обработчик главной страницы (требует аутентификации)
@@ -64,6 +126,7 @@ def index():
 
 # Страница регистрации
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def register():
     if is_authenticated():
         return redirect(url_for('index'))
@@ -98,6 +161,7 @@ def register():
 
 # Страница входа
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if is_authenticated():
         return redirect(url_for('index'))
@@ -112,9 +176,11 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             flash('Вы успешно вошли!', 'success')
+            app.logger.info(f'Успешный вход: {username}')
             return redirect(url_for('index'))
         else:
             flash('Неверное имя пользователя или пароль.', 'error')
+            app.logger.warning(f'Неудачная попытка входа: {username} с IP {request.remote_addr}')
 
     return render_template('login.html')
 
@@ -152,6 +218,13 @@ def create_post():
                 'Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
                 'error')
             return redirect(url_for('index'))
+
+        # Дополнительная проверка для изображений
+        if file_type == 'image':
+            image_format = validate_image(media_file.stream)
+            if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                flash('Недопустимый формат изображения или поврежденный файл.', 'error')
+                return redirect(url_for('index'))
 
         # Генерируем уникальное имя файла
         filename = str(uuid.uuid4()) + '.' + media_file.filename.rsplit('.', 1)[1].lower()
