@@ -127,3 +127,71 @@ p {
         margin-top: 2rem;
     }
 }
+
+/* Post creation form styles */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+#post-creation-form input:focus,
+#post-creation-form textarea:focus {
+    border-color: #7952b3;
+    box-shadow: 0 0 0 0.25rem rgba(121, 82, 179, 0.25);
+}
+
+#title-char-count,
+#content-char-count {
+    font-size: 0.8rem;
+    transition: color 0.3s ease;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+#media-preview {
+    background-color: #f8f9fa;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#media-preview img,
+#media-preview video {
+    max-width: 100%;
+    border-radius: 4px;
+}
+
+.btn-primary {
+    background-color: #7952b3;
+    border-color: #7952b3;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #6741a3;
+    border-color: #6741a3;
+}
+
+/* Form feedback */
+.form-text {
+    color: #6c757d;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* Placeholder styles */
+::placeholder {
+    color: #adb5bd !important;
+    opacity: 0.8 !important;
+}

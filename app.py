@@ -198,11 +198,25 @@ def logout():
 @app.route('/post/create', methods=['POST'])
 @login_required
 def create_post():
-    title = request.form.get('title')
-    content = request.form.get('content')
+    title = request.form.get('title', '').strip()
+    content = request.form.get('content', '').strip()
 
-    if not title or not content:
-        flash('Заголовок и содержание поста обязательны.', 'error')
+    # Расширенная валидация
+    errors = []
+    
+    if not title:
+        errors.append('Заголовок поста обязателен')
+    elif len(title) > 100:
+        errors.append('Заголовок поста не должен превышать 100 символов')
+        
+    if not content:
+        errors.append('Содержание поста обязательно')
+    elif len(content) > 5000:
+        errors.append('Содержание поста слишком длинное (максимум 5000 символов)')
+
+    if errors:
+        for error in errors:
+            flash(error, 'error')
         return redirect(url_for('index'))
 
     # Проверяем, есть ли файл в запросе
@@ -211,47 +225,66 @@ def create_post():
     media_type = None
 
     if media_file and media_file.filename:
-        file_type = allowed_file(media_file.filename)
-
-        if not file_type:
-            flash(
-                'Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
-                'error')
-            return redirect(url_for('index'))
-
-        # Дополнительная проверка для изображений
-        if file_type == 'image':
-            image_format = validate_image(media_file.stream)
-            if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
-                flash('Недопустимый формат изображения или поврежденный файл.', 'error')
+        try:
+            # Проверка размера файла
+            file_content = media_file.read()
+            media_file.seek(0)  # Сброс указателя после чтения
+            
+            # Максимальный размер 100 МБ
+            max_size = 100 * 1024 * 1024
+            if len(file_content) > max_size:
+                flash('Размер файла превышает допустимый лимит в 100 МБ.', 'error')
+                return redirect(url_for('index'))
+            
+            file_type = allowed_file(media_file.filename)
+            
+            if not file_type:
+                flash(
+                    'Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
+                    'error')
                 return redirect(url_for('index'))
 
-        # Генерируем уникальное имя файла
-        filename = str(uuid.uuid4()) + '.' + media_file.filename.rsplit('.', 1)[1].lower()
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # Дополнительная проверка для изображений
+            if file_type == 'image':
+                image_format = validate_image(media_file.stream)
+                if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                    flash('Недопустимый формат изображения или поврежденный файл.', 'error')
+                    return redirect(url_for('index'))
 
-        try:
+            # Генерируем уникальное имя файла
+            original_filename = secure_filename(media_file.filename)
+            file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            filename = str(uuid.uuid4()) + '.' + file_ext
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
             media_file.save(filepath)
             media_filename = filename
             media_type = file_type
         except Exception as e:
-            flash(f'Ошибка при загрузке файла: {str(e)}', 'error')
+            app.logger.error(f'Ошибка при загрузке файла: {str(e)}')
+            flash(f'Ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.', 'error')
             return redirect(url_for('index'))
 
-    # Создаем новый пост
-    post = Post(
-        title=title,
-        content=content,
-        media_file=media_filename,
-        media_type=media_type,
-        user_id=session['user_id']
-    )
+    try:
+        # Создаем новый пост
+        post = Post(
+            title=title,
+            content=content,
+            media_file=media_filename,
+            media_type=media_type,
+            user_id=session['user_id']
+        )
 
-    db.session.add(post)
-    db.session.commit()
+        db.session.add(post)
+        db.session.commit()
 
-    flash('Пост успешно создан!', 'success')
-    return redirect(url_for('index'))
+        flash('Пост успешно создан!', 'success')
+        return redirect(url_for('index'))
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Ошибка при создании поста: {str(e)}')
+        flash('Произошла ошибка при создании поста. Пожалуйста, попробуйте еще раз.', 'error')
+        return redirect(url_for('index'))
 
 
 # Профиль пользователя
