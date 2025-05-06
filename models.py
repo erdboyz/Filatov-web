@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_bcrypt import Bcrypt
+import json
 
 # Инициализация SQLAlchemy без привязки к приложению
 db = SQLAlchemy()
@@ -29,11 +30,19 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    media_file = db.Column(db.String(255), nullable=True)
-    media_type = db.Column(db.String(10), nullable=True)  # 'image' или 'video'
+    media_files = db.Column(db.Text, nullable=True)  # JSON строка с информацией о файлах
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     comments = db.relationship('Comment', backref='post', lazy=True, cascade='all, delete-orphan')
+    
+    # Метод для получения списка медиа-файлов
+    def get_media_files(self):
+        if not self.media_files:
+            return []
+        try:
+            return json.loads(self.media_files)
+        except:
+            return []
 
 
 # Модель комментария

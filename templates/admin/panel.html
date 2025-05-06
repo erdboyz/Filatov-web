@@ -40,8 +40,18 @@
                                 <td>{{ post.author.username }}</td>
                                 <td>{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                                 <td>
-                                    {% if post.media_file %}
-                                        <span class="badge bg-success">{{ post.media_type }}</span>
+                                    {% if post.media_files %}
+                                        {% set media_files = post.get_media_files() %}
+                                        {% if media_files %}
+                                            <span class="badge bg-success">{{ media_files|length }} файл(ов)</span>
+                                            <div class="mt-1">
+                                                {% for media in media_files %}
+                                                    <span class="badge bg-info me-1">{{ media.type }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Нет</span>
+                                        {% endif %}
                                     {% else %}
                                         <span class="badge bg-secondary">Нет</span>
                                     {% endif %}

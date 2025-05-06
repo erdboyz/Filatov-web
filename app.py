@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import json
 
 from models import db, User, Post, Comment, bcrypt
 
@@ -219,64 +220,79 @@ def create_post():
             flash(error, 'error')
         return redirect(url_for('index'))
 
-    # Проверяем, есть ли файл в запросе
-    media_file = request.files.get('media')
-    media_filename = None
-    media_type = None
-
-    if media_file and media_file.filename:
-        try:
-            # Проверка размера файла
-            file_content = media_file.read()
-            media_file.seek(0)  # Сброс указателя после чтения
-            
-            # Максимальный размер 100 МБ
-            max_size = 100 * 1024 * 1024
-            if len(file_content) > max_size:
-                flash('Размер файла превышает допустимый лимит в 100 МБ.', 'error')
-                return redirect(url_for('index'))
-            
-            file_type = allowed_file(media_file.filename)
-            
-            if not file_type:
-                flash(
-                    'Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
-                    'error')
-                return redirect(url_for('index'))
-
-            # Дополнительная проверка для изображений
-            if file_type == 'image':
-                image_format = validate_image(media_file.stream)
-                if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
-                    flash('Недопустимый формат изображения или поврежденный файл.', 'error')
-                    return redirect(url_for('index'))
-
-            # Генерируем уникальное имя файла
-            original_filename = secure_filename(media_file.filename)
-            file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
-            filename = str(uuid.uuid4()) + '.' + file_ext
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-            media_file.save(filepath)
-            media_filename = filename
-            media_type = file_type
-        except Exception as e:
-            app.logger.error(f'Ошибка при загрузке файла: {str(e)}')
-            flash(f'Ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.', 'error')
-            return redirect(url_for('index'))
-
     try:
         # Создаем новый пост
         post = Post(
             title=title,
             content=content,
-            media_file=media_filename,
-            media_type=media_type,
             user_id=session['user_id']
         )
-
+        
         db.session.add(post)
         db.session.commit()
+
+        # Обработка медиа файлов
+        media_files = request.files.getlist('media[]')
+        MAX_FILES = 5
+        
+        # Ограничиваем количество файлов до MAX_FILES
+        if len(media_files) > MAX_FILES:
+            flash(f'Превышен лимит файлов. Максимальное количество файлов: {MAX_FILES}.', 'error')
+            media_files = media_files[:MAX_FILES]
+        
+        processed_files = []
+        
+        for media_file in media_files:
+            if media_file and media_file.filename:
+                try:
+                    # Проверка размера файла
+                    file_content = media_file.read()
+                    media_file.seek(0)  # Сброс указателя после чтения
+                    
+                    # Максимальный размер 100 МБ
+                    max_size = 100 * 1024 * 1024
+                    if len(file_content) > max_size:
+                        flash(f'Файл {media_file.filename} превышает допустимый лимит в 100 МБ.', 'error')
+                        continue
+                    
+                    file_type = allowed_file(media_file.filename)
+                    
+                    if not file_type:
+                        flash(
+                            f'Файл {media_file.filename}: Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
+                            'error')
+                        continue
+
+                    # Дополнительная проверка для изображений
+                    if file_type == 'image':
+                        image_format = validate_image(media_file.stream)
+                        if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                            flash(f'Файл {media_file.filename}: Недопустимый формат изображения или поврежденный файл.', 'error')
+                            continue
+
+                    # Генерируем уникальное имя файла
+                    original_filename = secure_filename(media_file.filename)
+                    file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+                    filename = str(uuid.uuid4()) + '.' + file_ext
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+                    media_file.save(filepath)
+                    
+                    # Добавляем информацию о файле в список
+                    processed_files.append({
+                        'filename': filename,
+                        'type': file_type,
+                        'original_name': original_filename
+                    })
+                    
+                except Exception as e:
+                    app.logger.error(f'Ошибка при загрузке файла {media_file.filename}: {str(e)}')
+                    flash(f'Ошибка при загрузке файла {media_file.filename}. Пожалуйста, попробуйте еще раз.', 'error')
+        
+        # Обновляем пост с информацией о медиа файлах
+        if processed_files:
+            post.media_files = json.dumps(processed_files)
+            db.session.commit()
 
         flash('Пост успешно создан!', 'success')
         return redirect(url_for('index'))
@@ -436,12 +452,16 @@ def delete_post(post_id):
         flash('У вас нет прав для удаления этого поста.', 'error')
         return redirect(url_for('index'))
     
-    # Если есть медиа-файл, удаляем его
-    if post.media_file and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file)):
-        try:
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file))
-        except Exception as e:
-            print(f"Ошибка при удалении медиа-файла: {str(e)}")
+    # Если есть медиа-файлы, удаляем их
+    media_files = post.get_media_files()
+    if media_files:
+        for media in media_files:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], media.get('filename', ''))
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    app.logger.error(f"Ошибка при удалении медиа-файла {media.get('filename', '')}: {str(e)}")
     
     # Удаляем пост (комментарии удалятся автоматически благодаря cascade)
     db.session.delete(post)

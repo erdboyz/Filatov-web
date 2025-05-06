@@ -62,13 +62,19 @@ def admin_panel():
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
 
-    # Удаляем прикрепленный файл, если он есть
-    if post.media_file:
+    # Удаляем прикрепленные файлы, если они есть
+    media_files = post.get_media_files()
+    if media_files:
         from flask import current_app
-        try:
-            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], post.media_file))
-        except (FileNotFoundError, OSError):
-            pass  # Игнорируем ошибки, если файл не найден
+        for media in media_files:
+            filename = media.get('filename')
+            if filename:
+                try:
+                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except (FileNotFoundError, OSError) as e:
+                    current_app.logger.error(f"Ошибка при удалении файла {filename}: {str(e)}")
 
     # Удаляем запись из базы данных
     db.session.delete(post)
@@ -94,11 +100,17 @@ def delete_user(user_id):
     from flask import current_app
     posts = Post.query.filter_by(user_id=user_id).all()
     for post in posts:
-        if post.media_file:
-            try:
-                os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], post.media_file))
-            except (FileNotFoundError, OSError):
-                pass
+        media_files = post.get_media_files()
+        if media_files:
+            for media in media_files:
+                filename = media.get('filename')
+                if filename:
+                    try:
+                        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                    except (FileNotFoundError, OSError) as e:
+                        current_app.logger.error(f"Ошибка при удалении файла {filename}: {str(e)}")
 
     # Удаляем пользователя (каскадное удаление всех его постов)
     db.session.delete(user)
