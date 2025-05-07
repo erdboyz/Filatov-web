@@ -36,23 +36,24 @@
                                         <!-- Single media display -->
                                         {% set media = media_files[0] %}
                                         {% if media.type == 'image' %}
-                                            <img src="{{ url_for('static', filename='uploads/' + media.filename) }}"
-                                                 class="img-fluid mb-2 media-thumbnail"
-                                                 alt="Изображение к посту"
-                                                 data-media-type="image"
-                                                 data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
-                                        {% elif media.type == 'video' %}
-                                            <div class="ratio ratio-16x9 mb-2">
-                                                <video class="media-thumbnail" controls>
-                                                    <source src="{{ url_for('static', filename='uploads/' + media.filename) }}" type="video/mp4">
-                                                    Ваш браузер не поддерживает видео.
-                                                </video>
+                                            <div class="media-thumbnail-container" style="width: 300px; height: 300px;">
+                                                <img src="{{ url_for('static', filename='uploads/' + media.filename) }}"
+                                                     class="img-thumbnail media-thumbnail"
+                                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                                     alt="Изображение к посту"
+                                                     data-media-type="image"
+                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
                                             </div>
-                                            <button class="btn btn-sm btn-outline-primary media-open-btn"
-                                                    data-media-type="video"
-                                                    data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
-                                                Открыть в полном размере
-                                            </button>
+                                        {% elif media.type == 'video' %}
+                                            <div class="media-thumbnail-container" style="width: 300px; height: 300px;">
+                                                <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
+                                                     style="width: 100%; height: 100%; cursor: pointer;"
+                                                     data-media-type="video"
+                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
+                                                    <i class="fas fa-play-circle fa-3x text-light"></i>
+                                                </div>
+                                                <span class="badge bg-primary position-absolute bottom-0 start-0 m-1">Видео</span>
+                                            </div>
                                         {% endif %}
                                     {% else %}
                                         <!-- Multiple media gallery -->
@@ -69,7 +70,7 @@
                                                     </div>
                                                 {% elif media.type == 'video' %}
                                                     <div class="media-thumbnail-container position-relative" style="width: 150px; height: 150px;">
-                                                        <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail"
+                                                        <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
                                                              style="width: 100%; height: 100%; cursor: pointer;"
                                                              data-media-type="video"
                                                              data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">

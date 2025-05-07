@@ -3,24 +3,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const mediaModal = new bootstrap.Modal(document.getElementById('mediaModal'));
     const mediaContent = document.getElementById('mediaContent');
 
-    // Обработчик клика для изображений
-    document.querySelectorAll('.media-thumbnail[data-media-type="image"]').forEach(img => {
-        img.addEventListener('click', function() {
-            showMediaInModal('image', this.getAttribute('data-media-src'));
-        });
-    });
-
-    // Обработчик клика для кнопки открытия видео
-    document.querySelectorAll('.media-open-btn[data-media-type="video"]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            showMediaInModal('video', this.getAttribute('data-media-src'));
+    // Обработчик клика для изображений и видео
+    document.querySelectorAll('.media-thumbnail').forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const type = this.dataset.mediaType;
+            const src = this.dataset.mediaSrc;
+            showMediaInModal(type, src);
         });
     });
 
     // Функция для показа медиа в модальном окне
     function showMediaInModal(type, src) {
-        mediaContent.innerHTML = '';
+        mediaContent.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        `;
+        
         const downloadBtn = document.getElementById('downloadMediaBtn');
+        const mediaFileName = document.getElementById('mediaFileName');
+        const mediaFileSize = document.getElementById('mediaFileSize');
         
         // Set download link
         downloadBtn.href = src;
@@ -28,39 +30,70 @@ document.addEventListener('DOMContentLoaded', function() {
         // Extract filename from path
         const filename = src.split('/').pop();
         downloadBtn.setAttribute('download', filename);
+        mediaFileName.textContent = filename;
+        
+        // Create media element
+        const mediaElement = type === 'image' ? document.createElement('img') : document.createElement('video');
+        mediaElement.className = 'w-100';
+        mediaElement.style.maxHeight = '80vh';
         
         if (type === 'image') {
-            const img = document.createElement('img');
-            img.src = src;
-            img.className = 'img-fluid';
-            img.alt = 'Просмотр изображения';
-            img.style.maxHeight = '80vh';
-            mediaContent.appendChild(img);
-            
+            mediaElement.alt = 'Просмотр изображения';
+            mediaElement.src = src;
             document.getElementById('mediaModalLabel').textContent = 'Просмотр изображения';
-        } else if (type === 'video') {
-            const video = document.createElement('video');
-            video.controls = true;
-            video.autoplay = false;
-            video.className = 'w-100';
-            video.style.maxHeight = '80vh';
-
+        } else {
+            mediaElement.controls = true;
+            mediaElement.autoplay = true;
+            
             const source = document.createElement('source');
             source.src = src;
             source.type = 'video/mp4';
-
-            video.appendChild(source);
-            mediaContent.appendChild(video);
+            mediaElement.appendChild(source);
             
             document.getElementById('mediaModalLabel').textContent = 'Просмотр видео';
         }
-
+        
+        // Load media and show size
+        if (type === 'image') {
+            const img = new Image();
+            img.onload = function() {
+                mediaContent.innerHTML = '';
+                mediaContent.appendChild(mediaElement);
+                mediaFileSize.textContent = formatFileSize(this.naturalWidth * this.naturalHeight * 4); // Approximate size
+            };
+            img.src = src;
+        } else {
+            mediaElement.onloadedmetadata = function() {
+                mediaContent.innerHTML = '';
+                mediaContent.appendChild(mediaElement);
+                mediaFileSize.textContent = formatFileSize(this.duration * 1024 * 1024); // Approximate size
+            };
+            mediaElement.src = src;
+        }
+        
         mediaModal.show();
     }
 
-    // Закрытие модального окна очищает его содержимое
+    // Закрытие модального окна очищает его содержимое и останавливает видео
     document.getElementById('mediaModal').addEventListener('hidden.bs.modal', function() {
+        const video = mediaContent.querySelector('video');
+        if (video) {
+            video.pause();
+            video.currentTime = 0;
+        }
         mediaContent.innerHTML = '';
+        document.getElementById('mediaFileName').textContent = '';
+        document.getElementById('mediaFileSize').textContent = '';
+    });
+
+    // Добавляем обработчик клавиши Escape для закрытия модального окна
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('mediaModal').classList.contains('show')) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('mediaModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
     });
 
     // Post creation form enhancements
