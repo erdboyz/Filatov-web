@@ -3,11 +3,35 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 import imghdr
+import logging
+from logging.handlers import RotatingFileHandler
+from flask_wtf.csrf import CSRFProtect
+from flask_bcrypt import Bcrypt
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import json
 
-from models import db, User, Post, Comment
+from models import db, User, Post, Comment, bcrypt
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
+
+# Secure session configuration
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript from reading cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Provides some CSRF protection
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout in seconds (1 hour)
+
+# Initialize rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -22,7 +46,21 @@ os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
 
 # Инициализируем базу данных с нашим приложением
 db.init_app(app)
+bcrypt.init_app(app)
 
+# Настройка логирования
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+file_handler = RotatingFileHandler('logs/blog.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('Запуск блога')
 
 # Функция проверки, авторизован ли пользователь
 def is_authenticated():
@@ -46,11 +84,36 @@ def allowed_file(filename):
     extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
     if extension in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+        # Дополнительная проверка содержимого для изображений
         return 'image'
     elif extension in app.config['ALLOWED_VIDEO_EXTENSIONS']:
         return 'video'
 
     return None
+
+
+# Функция для проверки MIME-типа загруженного файла
+def validate_image(stream):
+    header = stream.read(512)
+    stream.seek(0)
+    format = imghdr.what(None, header)
+    if not format:
+        return None
+    return format
+
+
+# Добавляем защитные заголовки для каждого ответа
+@app.after_request
+def add_security_headers(response):
+    # Content Security Policy
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self';"
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # Enable XSS protection in browsers
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
 
 # Обработчик главной страницы (требует аутентификации)
@@ -64,6 +127,7 @@ def index():
 
 # Страница регистрации
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def register():
     if is_authenticated():
         return redirect(url_for('index'))
@@ -98,6 +162,7 @@ def register():
 
 # Страница входа
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if is_authenticated():
         return redirect(url_for('index'))
@@ -112,9 +177,11 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             flash('Вы успешно вошли!', 'success')
+            app.logger.info(f'Успешный вход: {username}')
             return redirect(url_for('index'))
         else:
             flash('Неверное имя пользователя или пароль.', 'error')
+            app.logger.warning(f'Неудачная попытка входа: {username} с IP {request.remote_addr}')
 
     return render_template('login.html')
 
@@ -132,53 +199,108 @@ def logout():
 @app.route('/post/create', methods=['POST'])
 @login_required
 def create_post():
-    title = request.form.get('title')
-    content = request.form.get('content')
+    title = request.form.get('title', '').strip()
+    content = request.form.get('content', '').strip()
 
-    if not title or not content:
-        flash('Заголовок и содержание поста обязательны.', 'error')
+    # Расширенная валидация
+    errors = []
+    
+    if not title:
+        errors.append('Заголовок поста обязателен')
+    elif len(title) > 100:
+        errors.append('Заголовок поста не должен превышать 100 символов')
+        
+    if not content:
+        errors.append('Содержание поста обязательно')
+    elif len(content) > 5000:
+        errors.append('Содержание поста слишком длинное (максимум 5000 символов)')
+
+    if errors:
+        for error in errors:
+            flash(error, 'error')
         return redirect(url_for('index'))
 
-    # Проверяем, есть ли файл в запросе
-    media_file = request.files.get('media')
-    media_filename = None
-    media_type = None
+    try:
+        # Создаем новый пост
+        post = Post(
+            title=title,
+            content=content,
+            user_id=session['user_id']
+        )
+        
+        db.session.add(post)
+        db.session.commit()
 
-    if media_file and media_file.filename:
-        file_type = allowed_file(media_file.filename)
+        # Обработка медиа файлов
+        media_files = request.files.getlist('media[]')
+        MAX_FILES = 5
+        
+        # Ограничиваем количество файлов до MAX_FILES
+        if len(media_files) > MAX_FILES:
+            flash(f'Превышен лимит файлов. Максимальное количество файлов: {MAX_FILES}.', 'error')
+            media_files = media_files[:MAX_FILES]
+        
+        processed_files = []
+        
+        for media_file in media_files:
+            if media_file and media_file.filename:
+                try:
+                    # Проверка размера файла
+                    file_content = media_file.read()
+                    media_file.seek(0)  # Сброс указателя после чтения
+                    
+                    # Максимальный размер 100 МБ
+                    max_size = 100 * 1024 * 1024
+                    if len(file_content) > max_size:
+                        flash(f'Файл {media_file.filename} превышает допустимый лимит в 100 МБ.', 'error')
+                        continue
+                    
+                    file_type = allowed_file(media_file.filename)
+                    
+                    if not file_type:
+                        flash(
+                            f'Файл {media_file.filename}: Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
+                            'error')
+                        continue
 
-        if not file_type:
-            flash(
-                'Недопустимый формат файла. Разрешены только изображения (JPEG, PNG, GIF) и видео (MP4, MOV, AVI, WEBM).',
-                'error')
-            return redirect(url_for('index'))
+                    # Дополнительная проверка для изображений
+                    if file_type == 'image':
+                        image_format = validate_image(media_file.stream)
+                        if not image_format or image_format not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                            flash(f'Файл {media_file.filename}: Недопустимый формат изображения или поврежденный файл.', 'error')
+                            continue
 
-        # Генерируем уникальное имя файла
-        filename = str(uuid.uuid4()) + '.' + media_file.filename.rsplit('.', 1)[1].lower()
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    # Генерируем уникальное имя файла
+                    original_filename = secure_filename(media_file.filename)
+                    file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+                    filename = str(uuid.uuid4()) + '.' + file_ext
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-        try:
-            media_file.save(filepath)
-            media_filename = filename
-            media_type = file_type
-        except Exception as e:
-            flash(f'Ошибка при загрузке файла: {str(e)}', 'error')
-            return redirect(url_for('index'))
+                    media_file.save(filepath)
+                    
+                    # Добавляем информацию о файле в список
+                    processed_files.append({
+                        'filename': filename,
+                        'type': file_type,
+                        'original_name': original_filename
+                    })
+                    
+                except Exception as e:
+                    app.logger.error(f'Ошибка при загрузке файла {media_file.filename}: {str(e)}')
+                    flash(f'Ошибка при загрузке файла {media_file.filename}. Пожалуйста, попробуйте еще раз.', 'error')
+        
+        # Обновляем пост с информацией о медиа файлах
+        if processed_files:
+            post.media_files = json.dumps(processed_files)
+            db.session.commit()
 
-    # Создаем новый пост
-    post = Post(
-        title=title,
-        content=content,
-        media_file=media_filename,
-        media_type=media_type,
-        user_id=session['user_id']
-    )
-
-    db.session.add(post)
-    db.session.commit()
-
-    flash('Пост успешно создан!', 'success')
-    return redirect(url_for('index'))
+        flash('Пост успешно создан!', 'success')
+        return redirect(url_for('index'))
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Ошибка при создании поста: {str(e)}')
+        flash('Произошла ошибка при создании поста. Пожалуйста, попробуйте еще раз.', 'error')
+        return redirect(url_for('index'))
 
 
 # Профиль пользователя
@@ -330,12 +452,16 @@ def delete_post(post_id):
         flash('У вас нет прав для удаления этого поста.', 'error')
         return redirect(url_for('index'))
     
-    # Если есть медиа-файл, удаляем его
-    if post.media_file and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file)):
-        try:
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.media_file))
-        except Exception as e:
-            print(f"Ошибка при удалении медиа-файла: {str(e)}")
+    # Если есть медиа-файлы, удаляем их
+    media_files = post.get_media_files()
+    if media_files:
+        for media in media_files:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], media.get('filename', ''))
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    app.logger.error(f"Ошибка при удалении медиа-файла {media.get('filename', '')}: {str(e)}")
     
     # Удаляем пост (комментарии удалятся автоматически благодаря cascade)
     db.session.delete(post)
