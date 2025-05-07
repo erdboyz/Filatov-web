@@ -2,23 +2,51 @@ document.addEventListener('DOMContentLoaded', function() {
     // Медиа-модальное окно
     const mediaModal = new bootstrap.Modal(document.getElementById('mediaModal'));
     const mediaContent = document.getElementById('mediaContent');
+    const prevMediaBtn = document.getElementById('prevMediaBtn');
+    const nextMediaBtn = document.getElementById('nextMediaBtn');
+    
+    let currentMediaIndex = 0;
+    let currentPostMedia = [];
 
     // Обработчик клика для изображений и видео
     document.querySelectorAll('.media-thumbnail').forEach(thumb => {
         thumb.addEventListener('click', function() {
             const type = this.dataset.mediaType;
             const src = this.dataset.mediaSrc;
+            
+            // Находим все медиа файлы в текущем посте
+            const postGallery = this.closest('.post-media-gallery');
+            if (postGallery) {
+                currentPostMedia = Array.from(postGallery.querySelectorAll('.media-thumbnail')).map(thumb => ({
+                    type: thumb.dataset.mediaType,
+                    src: thumb.dataset.mediaSrc
+                }));
+                
+                // Находим индекс текущего медиа файла
+                currentMediaIndex = currentPostMedia.findIndex(media => media.src === src);
+            } else {
+                // If not in a gallery, treat as single item
+                currentPostMedia = [{ type: type, src: src }];
+                currentMediaIndex = 0;
+            }
+            
             showMediaInModal(type, src);
+            // updateNavigationButtons moved to showMediaInModal after media loads
         });
     });
 
     // Функция для показа медиа в модальном окне
     function showMediaInModal(type, src) {
+        // Clear previous content
         mediaContent.innerHTML = `
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Загрузка...</span>
             </div>
         `;
+        
+        // Always hide navigation buttons initially
+        prevMediaBtn.classList.add('d-none');
+        nextMediaBtn.classList.add('d-none');
         
         const downloadBtn = document.getElementById('downloadMediaBtn');
         const mediaFileName = document.getElementById('mediaFileName');
@@ -35,7 +63,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create media element
         const mediaElement = type === 'image' ? document.createElement('img') : document.createElement('video');
         mediaElement.className = 'w-100';
-        mediaElement.style.maxHeight = '80vh';
+        
+        // Adjust styling for responsive display
+        mediaElement.style.maxHeight = window.innerWidth < 768 ? '60vh' : '80vh';
+        mediaElement.style.objectFit = 'contain';
         
         if (type === 'image') {
             mediaElement.alt = 'Просмотр изображения';
@@ -60,6 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 mediaContent.innerHTML = '';
                 mediaContent.appendChild(mediaElement);
                 mediaFileSize.textContent = formatFileSize(this.naturalWidth * this.naturalHeight * 4); // Approximate size
+                
+                // Important: Call this after content is added and visible
+                setTimeout(updateNavigationButtons, 0);
             };
             img.src = src;
         } else {
@@ -67,12 +101,102 @@ document.addEventListener('DOMContentLoaded', function() {
                 mediaContent.innerHTML = '';
                 mediaContent.appendChild(mediaElement);
                 mediaFileSize.textContent = formatFileSize(this.duration * 1024 * 1024); // Approximate size
+                
+                // Important: Call this after content is added and visible
+                setTimeout(updateNavigationButtons, 0);
             };
             mediaElement.src = src;
         }
         
+        // Show modal and ensure responsiveness
         mediaModal.show();
+        
+        // Add a resize event listener to adjust for window size changes
+        const handleResize = () => {
+            if (mediaContent.firstElementChild && mediaContent.firstElementChild.tagName !== 'DIV') {
+                mediaContent.firstElementChild.style.maxHeight = window.innerWidth < 768 ? '60vh' : '80vh';
+            }
+            updateNavigationButtons();
+        };
+        
+        // Remove any existing resize listener
+        window.removeEventListener('resize', handleResize);
+        
+        // Add resize listener
+        window.addEventListener('resize', handleResize);
+        
+        // Ensure that navigation buttons are correctly positioned
+        setTimeout(() => {
+            // Force buttons to be repositioned
+            const modalBody = document.querySelector('#mediaModal .modal-body');
+            if (modalBody) {
+                // Ensure buttons are visible if there are multiple media items
+                if (currentPostMedia.length > 1) {
+                    console.log('Multiple media items detected:', currentPostMedia.length);
+                    updateNavigationButtons();
+                }
+            }
+        }, 300);
     }
+
+    // Функция для обновления состояния кнопок навигации
+    function updateNavigationButtons() {
+        console.log('Updating navigation buttons. Current index:', currentMediaIndex, 'Total items:', currentPostMedia.length);
+        
+        // Always hide both buttons first
+        prevMediaBtn.classList.add('d-none');
+        nextMediaBtn.classList.add('d-none');
+        
+        // If there's only one or no media items, keep buttons hidden
+        if (currentPostMedia.length <= 1) {
+            console.log('Only one or no media items, hiding buttons');
+            return;
+        }
+        
+        console.log('Multiple media items detected:', currentPostMedia.length);
+        
+        // Show prev button if not on first item
+        if (currentMediaIndex > 0) {
+            prevMediaBtn.classList.remove('d-none');
+            console.log('Showing prev button');
+        }
+        
+        // Show next button if not on last item
+        if (currentMediaIndex < currentPostMedia.length - 1) {
+            nextMediaBtn.classList.remove('d-none');
+            console.log('Showing next button');
+        }
+        
+        // Force buttons to be visible by setting style directly
+        if (currentMediaIndex > 0) {
+            prevMediaBtn.style.display = 'flex';
+        }
+        
+        if (currentMediaIndex < currentPostMedia.length - 1) {
+            nextMediaBtn.style.display = 'flex';
+        }
+    }
+
+    // Обработчики для кнопок навигации
+    prevMediaBtn.addEventListener('click', function() {
+        console.log('Previous button clicked, current index:', currentMediaIndex);
+        if (currentMediaIndex > 0) {
+            currentMediaIndex--;
+            const media = currentPostMedia[currentMediaIndex];
+            showMediaInModal(media.type, media.src);
+            // Remove the updateNavigationButtons call here since it's already called in showMediaInModal
+        }
+    });
+
+    nextMediaBtn.addEventListener('click', function() {
+        console.log('Next button clicked, current index:', currentMediaIndex);
+        if (currentMediaIndex < currentPostMedia.length - 1) {
+            currentMediaIndex++;
+            const media = currentPostMedia[currentMediaIndex];
+            showMediaInModal(media.type, media.src);
+            // Remove the updateNavigationButtons call here since it's already called in showMediaInModal
+        }
+    });
 
     // Закрытие модального окна очищает его содержимое и останавливает видео
     document.getElementById('mediaModal').addEventListener('hidden.bs.modal', function() {
@@ -84,6 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
         mediaContent.innerHTML = '';
         document.getElementById('mediaFileName').textContent = '';
         document.getElementById('mediaFileSize').textContent = '';
+        currentPostMedia = [];
+        currentMediaIndex = 0;
     });
 
     // Добавляем обработчик клавиши Escape для закрытия модального окна
@@ -93,6 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modal) {
                 modal.hide();
             }
+        } else if (e.key === 'ArrowLeft' && document.getElementById('mediaModal').classList.contains('show')) {
+            prevMediaBtn.click();
+        } else if (e.key === 'ArrowRight' && document.getElementById('mediaModal').classList.contains('show')) {
+            nextMediaBtn.click();
         }
     });
 
