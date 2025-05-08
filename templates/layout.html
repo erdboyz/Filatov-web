@@ -99,15 +99,26 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if session.user_id %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('profile', user_id=session.user_id) }}">Профиль</a>
-                    </li>
-                    <li class="nav-item">
-                        {# Display nickname if available, otherwise username #}
-                        <span class="nav-link text-light">Привет, {{ session.get('nickname') or session.get('username') }}!</span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">Выйти</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if session.get('nickname') %}
+                                {{ session.get('nickname') }}
+                            {% else %}
+                                {{ session.get('username') }}
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('profile', user_id=session.user_id) }}">
+                                <i class="fas fa-user me-2"></i>Мой профиль
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('account_settings') }}">
+                                <i class="fas fa-cog me-2"></i>Настройки аккаунта
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                            </a></li>
+                        </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">

@@ -96,7 +96,7 @@
                         {% endif %}
                     </div>
                     <div class="card-footer text-muted">
-                        Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.username }}</a>
+                        Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.nickname or post.author.username }}</a>
                     </div>
                     
                     <!-- Комментарии к посту -->
@@ -124,7 +124,7 @@
                                         <div class="comment-item mb-2 pb-2 border-bottom">
                                             <div class="d-flex justify-content-between">
                                                 <div class="comment-content">
-                                                    <a href="{{ url_for('profile', user_id=comment.author.id) }}" class="fw-bold">{{ comment.author.username }}</a>
+                                                    <a href="{{ url_for('profile', user_id=comment.author.id) }}" class="fw-bold">{{ comment.author.nickname or comment.author.username }}</a>
                                                     <span class="ms-2">{{ comment.content }}</span>
                                                 </div>
                                                 <div class="comment-meta d-flex align-items-center">

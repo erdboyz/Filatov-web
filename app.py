@@ -235,6 +235,8 @@ def login():
                 
             session['user_id'] = user.id
             session['username'] = user.username
+            if user.nickname:
+                session['nickname'] = user.nickname
             flash('Вы успешно вошли!', 'success')
             app.logger.info(f'Успешный вход: {username}')
             return redirect(url_for('index'))
@@ -250,6 +252,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('username', None)
+    session.pop('nickname', None)
     flash('Вы вышли из системы.', 'success')
     return redirect(url_for('login'))
 
@@ -380,16 +383,27 @@ def profile(user_id):
     return render_template('profile.html', user=user, posts=posts, pagination=pagination)
 
 
-# Редактирование профиля пользователя
-@app.route('/profile/edit', methods=['GET', 'POST'])
+# Страница настроек аккаунта
+@app.route('/account/settings', methods=['GET'])
 @login_required
-def edit_profile():
+def account_settings():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+    return render_template('account_settings.html', user=user)
+
+
+# Обновление профиля пользователя
+@app.route('/account/update/profile', methods=['POST'])
+@login_required
+def update_profile():
     user_id = session['user_id']
     user = User.query.get_or_404(user_id)
 
     if request.method == 'POST':
         new_username = request.form.get('username')
+        nickname = request.form.get('nickname', '').strip() or None
         email = request.form.get('email')
+        remove_avatar = request.form.get('remove_avatar') == '1'
 
         # Проверки данных
         if not new_username or not email:
@@ -399,44 +413,62 @@ def edit_profile():
         else:
             user.username = new_username
             user.email = email
+            user.nickname = nickname
             
-            # Обработка загрузки аватара
-            avatar_file = request.files.get('avatar')
-            if avatar_file and avatar_file.filename:
-                file_ext = avatar_file.filename.rsplit('.', 1)[1].lower() if '.' in avatar_file.filename else ''
-                
-                if file_ext not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
-                    flash('Недопустимый формат файла для аватара. Разрешены только изображения (JPEG, PNG, GIF).', 'error')
-                else:
-                    # Удаляем старый аватар, если он существует
-                    if user.avatar and os.path.exists(os.path.join(app.config['AVATAR_FOLDER'], user.avatar)):
-                        try:
-                            os.remove(os.path.join(app.config['AVATAR_FOLDER'], user.avatar))
-                        except Exception as e:
-                            print(f"Ошибка при удалении старого аватара: {str(e)}")
-                    
-                    # Генерируем уникальное имя файла
-                    avatar_filename = f"avatar_{user_id}_{str(uuid.uuid4())}.{file_ext}"
-                    avatar_path = os.path.join(app.config['AVATAR_FOLDER'], avatar_filename)
-                    
+            # Обработка удаления аватара
+            if remove_avatar and user.avatar:
+                # Удаляем файл аватара
+                avatar_path = os.path.join(app.config['AVATAR_FOLDER'], user.avatar)
+                if os.path.exists(avatar_path):
                     try:
-                        avatar_file.save(avatar_path)
-                        user.avatar = avatar_filename
+                        os.remove(avatar_path)
                     except Exception as e:
-                        flash(f'Ошибка при загрузке аватара: {str(e)}', 'error')
+                        app.logger.error(f"Ошибка при удалении аватара: {str(e)}")
+                
+                # Удаляем ссылку на аватар из базы данных
+                user.avatar = None
+            # Обработка загрузки нового аватара
+            elif not remove_avatar:
+                avatar_file = request.files.get('avatar')
+                if avatar_file and avatar_file.filename:
+                    file_ext = avatar_file.filename.rsplit('.', 1)[1].lower() if '.' in avatar_file.filename else ''
+                    
+                    if file_ext not in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                        flash('Недопустимый формат файла для аватара. Разрешены только изображения (JPEG, PNG, GIF).', 'error')
+                    else:
+                        # Удаляем старый аватар, если он существует
+                        if user.avatar and os.path.exists(os.path.join(app.config['AVATAR_FOLDER'], user.avatar)):
+                            try:
+                                os.remove(os.path.join(app.config['AVATAR_FOLDER'], user.avatar))
+                            except Exception as e:
+                                app.logger.error(f"Ошибка при удалении старого аватара: {str(e)}")
+                        
+                        # Генерируем уникальное имя файла
+                        avatar_filename = f"avatar_{user_id}_{str(uuid.uuid4())}.{file_ext}"
+                        avatar_path = os.path.join(app.config['AVATAR_FOLDER'], avatar_filename)
+                        
+                        try:
+                            avatar_file.save(avatar_path)
+                            user.avatar = avatar_filename
+                        except Exception as e:
+                            flash(f'Ошибка при загрузке аватара: {str(e)}', 'error')
             
             db.session.commit()
             session['username'] = user.username # Update username in session
+            if nickname:
+                session['nickname'] = nickname
+            else:
+                session.pop('nickname', None)  # Remove nickname if it was unset
             flash('Профиль успешно обновлен!', 'success')
-            return redirect(url_for('profile', user_id=user.id))
+            return redirect(url_for('account_settings', _anchor='profile'))
 
-    return render_template('edit_profile.html', user=user)
+    return redirect(url_for('account_settings', _anchor='profile'))
 
 
-# Изменение пароля
-@app.route('/profile/change_password', methods=['GET', 'POST'])
+# Обновление пароля
+@app.route('/account/update/password', methods=['POST'])
 @login_required
-def change_password():
+def update_password():
     user_id = session['user_id']
     user = User.query.get_or_404(user_id)
 
@@ -456,9 +488,28 @@ def change_password():
             user.set_password(new_password)
             db.session.commit()
             flash('Пароль успешно изменен!', 'success')
-            return redirect(url_for('profile', user_id=user.id))
+        
+    return redirect(url_for('account_settings', _anchor='password'))
 
-    return render_template('change_password.html')
+
+# Обновление настроек приватности
+@app.route('/account/update/privacy', methods=['POST'])
+@login_required
+def update_privacy():
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        hide_email = 'hide_email' in request.form
+        hide_posts = 'hide_posts' in request.form
+
+        user.hide_email = hide_email
+        user.hide_posts = hide_posts
+        
+        db.session.commit()
+        flash('Настройки приватности успешно обновлены!', 'success')
+    
+    return redirect(url_for('account_settings', _anchor='privacy'))
 
 
 # Создание нового комментария к посту
@@ -695,6 +746,23 @@ def resend_verification():
         flash(f'Произошла ошибка при отправке нового кода: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
     
     return redirect(url_for('verify_email'))
+
+
+# Редиректы для обратной совместимости со старыми URL
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        return update_profile()
+    return redirect(url_for('account_settings', _anchor='profile'))
+
+
+@app.route('/profile/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        return update_password()
+    return redirect(url_for('account_settings', _anchor='password'))
 
 
 if __name__ == '__main__':
