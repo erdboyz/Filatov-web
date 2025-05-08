@@ -8,6 +8,39 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentMediaIndex = 0;
     let currentPostMedia = [];
 
+    // Setup drag overlay for the entire page
+    const dragOverlay = document.querySelector('.drag-overlay');
+    
+    // Only setup drag events if we have a drag overlay
+    if (dragOverlay) {
+        // Global drag events to show overlay only when files are being dragged
+        document.addEventListener('dragenter', function(e) {
+            if (e.dataTransfer.types.includes('Files')) {
+                dragOverlay.classList.add('active');
+            }
+        });
+        
+        document.addEventListener('dragleave', function(e) {
+            // Only hide if leaving the document (not entering a child element)
+            if (e.currentTarget.contains(e.relatedTarget) === false) {
+                dragOverlay.classList.remove('active');
+            }
+        });
+        
+        document.addEventListener('dragover', function(e) {
+            // Prevent default to allow drop
+            e.preventDefault();
+        });
+        
+        document.addEventListener('drop', function(e) {
+            // Hide overlay when dropping anywhere
+            dragOverlay.classList.remove('active');
+            
+            // Prevent default browser behavior
+            e.preventDefault();
+        });
+    }
+
     // Обработчик клика для изображений и видео
     document.querySelectorAll('.media-thumbnail').forEach(thumb => {
         thumb.addEventListener('click', function() {

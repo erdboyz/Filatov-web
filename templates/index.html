@@ -5,24 +5,26 @@
 {% block content %}
 <div class="row">
     <div class="col-md-8">
-        <h1>Лента записей</h1>
+        <h1 class="mb-4">Лента записей</h1>
 
         {% if posts %}
             {% for post in posts %}
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ post.title }}</h5>
-                        <div>
-                            <small class="text-muted me-2">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                <div class="card post-card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ post.title }}</h5>
                             {% if post.user_id == session.user_id or is_admin() %}
                                 <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                    <button type="submit" class="btn btn-sm btn-delete" 
                                             onclick="return confirm('Вы уверены, что хотите удалить этот пост? Это действие нельзя отменить.')">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
                             {% endif %}
+                        </div>
+                        <div class="post-meta mt-1">
+                            Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.nickname or post.author.username }}</a> · {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
                         </div>
                     </div>
                     <div class="card-body">
@@ -36,7 +38,7 @@
                                         <!-- Single media display -->
                                         {% set media = media_files[0] %}
                                         {% if media.type == 'image' %}
-                                            <div class="media-thumbnail-container" style="width: 300px; height: 300px;">
+                                            <div class="media-thumbnail-container" style="width: 100%; max-width: 600px; height: 300px; margin: 0 auto;">
                                                 <img src="{{ url_for('static', filename='uploads/' + media.filename) }}"
                                                      class="img-thumbnail media-thumbnail"
                                                      style="width: 100%; height: 100%; object-fit: cover;"
@@ -46,7 +48,7 @@
                                                      loading="lazy">
                                             </div>
                                         {% elif media.type == 'video' %}
-                                            <div class="media-thumbnail-container" style="width: 300px; height: 300px;">
+                                            <div class="media-thumbnail-container" style="width: 100%; max-width: 600px; height: 300px; margin: 0 auto;">
                                                 <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
                                                      style="width: 100%; height: 100%; cursor: pointer;"
                                                      data-media-type="video"
@@ -59,10 +61,10 @@
                                         {% endif %}
                                     {% else %}
                                         <!-- Multiple media gallery -->
-                                        <div class="media-gallery d-flex flex-wrap gap-2">
+                                        <div class="media-gallery d-flex flex-wrap">
                                             {% for media in media_files %}
                                                 {% if media.type == 'image' %}
-                                                    <div class="media-thumbnail-container" style="width: 150px; height: 150px;">
+                                                    <div class="media-thumbnail-container me-2 mb-2" style="width: 150px; height: 150px;">
                                                         <img src="{{ url_for('static', filename='uploads/' + media.filename) }}"
                                                              class="img-thumbnail media-thumbnail"
                                                              style="width: 100%; height: 100%; object-fit: cover;"
@@ -72,7 +74,7 @@
                                                              loading="lazy">
                                                     </div>
                                                 {% elif media.type == 'video' %}
-                                                    <div class="media-thumbnail-container position-relative" style="width: 150px; height: 150px;">
+                                                    <div class="media-thumbnail-container position-relative me-2 mb-2" style="width: 150px; height: 150px;">
                                                         <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
                                                              style="width: 100%; height: 100%; cursor: pointer;"
                                                              data-media-type="video"
@@ -85,18 +87,10 @@
                                                 {% endif %}
                                             {% endfor %}
                                         </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                Нажмите на изображение или видео для просмотра в полном размере
-                                            </small>
-                                        </div>
                                     {% endif %}
                                 </div>
                             {% endif %}
                         {% endif %}
-                    </div>
-                    <div class="card-footer text-muted">
-                        Автор: <a href="{{ url_for('profile', user_id=post.author.id) }}">{{ post.author.nickname or post.author.username }}</a>
                     </div>
                     
                     <!-- Комментарии к посту -->
@@ -132,7 +126,7 @@
                                                     {% if comment.user_id == session.user_id or post.user_id == session.user_id or is_admin() %}
                                                         <form action="{{ url_for('delete_comment', comment_id=comment.id) }}" method="post" style="display: inline;">
                                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                            <button type="submit" class="btn btn-sm text-danger border-0 ms-2" onclick="return confirm('Вы уверены, что хотите удалить этот комментарий?')">
+                                                            <button type="submit" class="btn btn-sm btn-delete ms-2" onclick="return confirm('Вы уверены, что хотите удалить этот комментарий?')">
                                                                 <i class="fas fa-trash-alt"></i>
                                                             </button>
                                                         </form>
@@ -228,8 +222,7 @@
                                    accept="image/jpeg,image/png,image/gif,video/mp4,video/avi,video/mov,video/webm" hidden>
                         </div>
                         <div class="form-text mt-2">
-                            <div>Максимальный размер: 100 МБ.</div>
-                            <div>Можно прикрепить до 5 файлов.</div>
+                            <div>Максимальный размер: 100 МБ. Можно прикрепить до 5 файлов.</div>
                             <div id="file-count">Выбрано файлов: 0/5</div>
                         </div>
                     </div>
@@ -245,7 +238,7 @@
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane me-1"></i> Опубликовать
+                            Опубликовать
                         </button>
                     </div>
                 </form>
@@ -253,4 +246,74 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure any drag-overlay elements are properly hidden
+        const dragOverlays = document.querySelectorAll('.drag-overlay');
+        if (dragOverlays.length > 0) {
+            dragOverlays.forEach(overlay => {
+                overlay.style.visibility = 'hidden';
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+            });
+        }
+        
+        // Set up proper event handlers for the drag zone
+        const dropZone = document.getElementById('drop-zone');
+        if (dropZone) {
+            // Remove any existing drag-overlay that might be incorrectly displayed
+            const existingOverlay = document.querySelector('.drag-overlay');
+            if (existingOverlay && existingOverlay.parentNode) {
+                existingOverlay.parentNode.removeChild(existingOverlay);
+            }
+            
+            // Initialize the drag-and-drop functionality with a proper overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'drag-overlay';
+            overlay.innerHTML = `
+                <div class="drag-overlay-content">
+                    <p>Отпустите файлы для загрузки</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            // Handle drag events properly
+            document.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                overlay.classList.add('active');
+            });
+            
+            document.addEventListener('dragleave', function(e) {
+                if (!e.relatedTarget || e.relatedTarget.tagName === 'HTML') {
+                    overlay.classList.remove('active');
+                }
+            });
+            
+            document.addEventListener('drop', function(e) {
+                if (e.target !== dropZone && !dropZone.contains(e.target)) {
+                    e.preventDefault();
+                }
+                overlay.classList.remove('active');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                overlay.classList.remove('active');
+                
+                // Handle file drop (if needed)
+                if (e.dataTransfer.files.length > 0) {
+                    const input = dropZone.querySelector('input[type="file"]');
+                    if (input) {
+                        input.files = e.dataTransfer.files;
+                        const event = new Event('change', { bubbles: true });
+                        input.dispatchEvent(event);
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
