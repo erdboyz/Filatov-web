@@ -43,14 +43,16 @@
                                                      style="width: 100%; height: 100%; object-fit: cover;"
                                                      alt="Изображение к посту"
                                                      data-media-type="image"
-                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
+                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}"
+                                                     loading="lazy">
                                             </div>
                                         {% elif media.type == 'video' %}
                                             <div class="media-thumbnail-container" style="width: 300px; height: 300px;">
                                                 <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
                                                      style="width: 100%; height: 100%; cursor: pointer;"
                                                      data-media-type="video"
-                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
+                                                     data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}"
+                                                     data-lazy-load="true">
                                                     <i class="fas fa-play-circle fa-3x text-light"></i>
                                                 </div>
                                                 <span class="badge bg-primary position-absolute bottom-0 start-0 m-1">Видео</span>
@@ -67,14 +69,16 @@
                                                              style="width: 100%; height: 100%; object-fit: cover;"
                                                              alt="Изображение {{ loop.index }}"
                                                              data-media-type="image"
-                                                             data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
+                                                             data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}"
+                                                             loading="lazy">
                                                     </div>
                                                 {% elif media.type == 'video' %}
                                                     <div class="media-thumbnail-container position-relative" style="width: 150px; height: 150px;">
                                                         <div class="bg-dark d-flex align-items-center justify-content-center img-thumbnail media-thumbnail"
                                                              style="width: 100%; height: 100%; cursor: pointer;"
                                                              data-media-type="video"
-                                                             data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}">
+                                                             data-media-src="{{ url_for('static', filename='uploads/' + media.filename) }}"
+                                                             data-lazy-load="true">
                                                             <i class="fas fa-play-circle fa-3x text-light"></i>
                                                         </div>
                                                         <span class="badge bg-primary position-absolute bottom-0 start-0 m-1">Видео</span>
@@ -138,6 +142,40 @@
                     </div>
                 </div>
             {% endfor %}
+            
+            <!-- Pagination controls -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Навигация по страницам">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous page button -->
+                    <li class="page-item {{ 'disabled' if pagination.page == 1 else '' }}">
+                        <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Предыдущая">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Page numbers -->
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                                <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Next page button -->
+                    <li class="page-item {{ 'disabled' if pagination.page == pagination.pages else '' }}">
+                        <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Следующая">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
         {% else %}
             <div class="alert alert-info">
                 У пользователя пока нет записей.
@@ -156,7 +194,8 @@
                     <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" 
                          class="rounded-circle img-thumbnail mb-3" 
                          style="width: 150px; height: 150px; object-fit: cover;" 
-                         alt="Аватар пользователя">
+                         alt="Аватар пользователя"
+                         loading="lazy">
                 {% else %}
                     <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
                          style="width: 150px; height: 150px;">

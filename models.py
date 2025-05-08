@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
 import json
+import secrets
 
 # Инициализация SQLAlchemy без привязки к приложению
 db = SQLAlchemy()
@@ -15,6 +16,9 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     avatar = db.Column(db.String(255), nullable=True)
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_code = db.Column(db.String(6), nullable=True)
+    verification_expires_at = db.Column(db.DateTime, nullable=True)
     posts = db.relationship('Post', backref='author', lazy=True)
     comments = db.relationship('Comment', backref='author', lazy=True)
 
@@ -23,6 +27,13 @@ class User(db.Model):
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+        
+    def generate_verification_code(self):
+        # Generate a 6-digit code
+        self.verification_code = ''.join(secrets.choice('0123456789') for _ in range(6))
+        # Set expiration time (30 minutes from now)
+        self.verification_expires_at = datetime.utcnow() + timedelta(minutes=30)
+        return self.verification_code
 
 
 # Модель поста

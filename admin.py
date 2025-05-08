@@ -96,10 +96,13 @@ def delete_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # Находим все посты пользователя и удаляем прикрепленные файлы
+    # Находим все посты пользователя
     from flask import current_app
     posts = Post.query.filter_by(user_id=user_id).all()
+    
+    # Сначала удаляем каждый пост отдельно
     for post in posts:
+        # Удаляем прикрепленные файлы
         media_files = post.get_media_files()
         if media_files:
             for media in media_files:
@@ -111,10 +114,19 @@ def delete_user(user_id):
                             os.remove(file_path)
                     except (FileNotFoundError, OSError) as e:
                         current_app.logger.error(f"Ошибка при удалении файла {filename}: {str(e)}")
-
-    # Удаляем пользователя (каскадное удаление всех его постов)
+        
+        # Удаляем сам пост из базы данных
+        db.session.delete(post)
+    
+    # После удаления всех постов удаляем пользователя
     db.session.delete(user)
-    db.session.commit()
-
-    flash(f'Пользователь "{user.username}" и все его посты были успешно удалены.', 'success')
+    
+    try:
+        db.session.commit()
+        flash(f'Пользователь "{user.username}" и все его посты были успешно удалены.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Ошибка при удалении пользователя: {str(e)}")
+        flash(f'Произошла ошибка при удалении пользователя. {str(e)}', 'error')
+    
     return redirect(url_for('admin.admin_panel'))
