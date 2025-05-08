@@ -120,9 +120,16 @@ def add_security_headers(response):
 @app.route('/')
 @login_required
 def index():
-    # Fetch posts with comments ordered by creation date
-    posts = Post.query.order_by(Post.created_at.desc()).all()
-    return render_template('index.html', posts=posts)
+    # Get the page parameter from the request query string, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Number of posts per page
+    
+    # Fetch posts with pagination
+    pagination = Post.query.order_by(Post.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False)
+    posts = pagination.items
+    
+    return render_template('index.html', posts=posts, pagination=pagination)
 
 
 # Страница регистрации
@@ -308,9 +315,17 @@ def create_post():
 @login_required
 def profile(user_id):
     user = User.query.get_or_404(user_id)
-    # Fetch user's posts with comments ordered by creation date
-    posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).all()
-    return render_template('profile.html', user=user, posts=posts)
+    
+    # Get the page parameter from the request query string, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Number of posts per page
+    
+    # Fetch user's posts with pagination
+    pagination = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False)
+    posts = pagination.items
+    
+    return render_template('profile.html', user=user, posts=posts, pagination=pagination)
 
 
 # Редактирование профиля пользователя
