@@ -1,1 +1,111 @@
-
+2025-05-08 14:38:42,806 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:38:43,991 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:39:39,952 ERROR: Ошибка отправки письма: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера [in C:\Users\User\PycharmProjects\Blog\app.py:204]
+2025-05-08 14:39:53,973 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:204]
+2025-05-08 14:40:16,574 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:204]
+2025-05-08 14:41:24,905 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:41:51,736 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:41:52,871 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:42:29,524 ERROR: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326ba7aa8ccsm1707431fa.38 - gsmtp') [in c:\Users\User\PycharmProjects\Blog\app.py:205]
+2025-05-08 14:44:42,563 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:44:43,714 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:74]
+2025-05-08 14:45:07,157 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:205]
+2025-05-08 14:46:54,100 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:205]
+2025-05-08 14:53:16,870 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:76]
+2025-05-08 14:53:18,015 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:76]
+2025-05-08 14:54:18,125 ERROR: Ошибка отправки письма: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера [in C:\Users\User\PycharmProjects\Blog\app.py:208]
+Traceback (most recent call last):
+  File "C:\Users\User\PycharmProjects\Blog\app.py", line 197, in register
+    mail.send(msg)
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 158, in configure_host
+    host = smtplib.SMTP(self.mail.server, self.mail.port)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 255, in __init__
+    (code, msg) = self.connect(host, port)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 341, in connect
+    self.sock = self._get_socket(host, port, self.timeout)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 312, in _get_socket
+    return socket.create_connection((host, port), timeout,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 852, in create_connection
+    raise exceptions[0]
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 837, in create_connection
+    sock.connect(sa)
+TimeoutError: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера
+2025-05-08 14:54:48,990 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:208]
+Traceback (most recent call last):
+  File "C:\Users\User\PycharmProjects\Blog\app.py", line 197, in register
+    mail.send(msg)
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 165, in configure_host
+    host.login(self.mail.username, self.mail.password)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 739, in login
+    (code, resp) = self.auth(
+                   ^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 641, in auth
+    response = encode_base64(initial_response.encode('ascii'), eol='')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128)
+2025-05-08 14:55:51,333 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:208]
+Traceback (most recent call last):
+  File "C:\Users\User\PycharmProjects\Blog\app.py", line 197, in register
+    mail.send(msg)
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 165, in configure_host
+    host.login(self.mail.username, self.mail.password)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 739, in login
+    (code, resp) = self.auth(
+                   ^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 641, in auth
+    response = encode_base64(initial_response.encode('ascii'), eol='')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128)
+2025-05-08 14:57:14,947 ERROR: Ошибка отправки письма: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128) [in C:\Users\User\PycharmProjects\Blog\app.py:208]
+Traceback (most recent call last):
+  File "C:\Users\User\PycharmProjects\Blog\app.py", line 197, in register
+    mail.send(msg)
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 165, in configure_host
+    host.login(self.mail.username, self.mail.password)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 739, in login
+    (code, resp) = self.auth(
+                   ^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 641, in auth
+    response = encode_base64(initial_response.encode('ascii'), eol='')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'ascii' codec can't encode character '\xa0' in position 29: ordinal not in range(128)
+2025-05-08 14:58:12,780 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:06:50,735 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:06:51,881 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:07:55,708 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:239]
+2025-05-08 15:47:16,269 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:47:17,412 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:48:22,835 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:48:23,973 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:53:13,337 WARNING: Неудачная попытка входа: huesos с IP 127.0.0.1 [in C:\Users\User\PycharmProjects\Blog\app.py:243]
+2025-05-08 15:53:21,401 INFO: Успешный вход: deadinside [in C:\Users\User\PycharmProjects\Blog\app.py:239]
+2025-05-08 15:54:28,710 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:239]
+2025-05-08 15:56:44,184 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-08 15:58:18,814 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:239]
+2025-05-08 15:59:21,319 WARNING: Неудачная попытка входа: deadinside с IP 127.0.0.1 [in C:\Users\User\PycharmProjects\Blog\app.py:243]
+2025-05-08 16:01:05,270 INFO: Успешный вход: deadinside [in C:\Users\User\PycharmProjects\Blog\app.py:239]
+2025-05-08 16:01:31,535 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:239]

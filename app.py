@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, Response, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -10,6 +10,8 @@ from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import json
+from flask_mail import Mail, Message
+from datetime import datetime
 
 from models import db, User, Post, Comment, bcrypt
 
@@ -40,6 +42,17 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB лимит
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['jpeg', 'jpg', 'png', 'gif']
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = ['mp4', 'mov', 'avi', 'webm']
 
+# Настройка Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+# Ensure there are NO non-ASCII characters (like spaces or invisible characters) in these strings
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or 'example@gmail.com'
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or 'your-password'
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or 'example@gmail.com'
+app.config['MAIL_ASCII_ATTACHMENTS'] = False
+app.config['MAIL_DEBUG'] = True  # Enable mail debug
+
 # Создаем директории для загрузок, если они не существуют
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
@@ -47,6 +60,7 @@ os.makedirs(app.config['AVATAR_FOLDER'], exist_ok=True)
 # Инициализируем базу данных с нашим приложением
 db.init_app(app)
 bcrypt.init_app(app)
+mail = Mail(app)
 
 # Настройка логирования
 if not os.path.exists('logs'):
@@ -155,14 +169,45 @@ def register():
         elif User.query.filter_by(email=email).first():
             flash('Данный email уже используется.', 'error')
         else:
-            # Создаем нового пользователя
-            user = User(username=username, email=email)
+            # Создаем нового пользователя (неподтвержденного)
+            user = User(username=username, email=email, is_verified=False)
             user.set_password(password)
+            
+            # Генерируем код подтверждения
+            verification_code = user.generate_verification_code()
+            
             db.session.add(user)
             db.session.commit()
-
-            flash('Регистрация успешна! Теперь вы можете войти.', 'success')
-            return redirect(url_for('login'))
+            
+            # Отправляем письмо с кодом подтверждения
+            try:
+                msg = Message(
+                    'Подтверждение регистрации',
+                    recipients=[email],
+                    charset='utf-8'
+                )
+                
+                verification_message = (
+                    "Для подтверждения регистрации, пожалуйста, введите следующий код:\n\n"
+                    f"{verification_code}\n\n"
+                    "Код действителен в течение 30 минут.\n\n"
+                    "Если вы не регистрировались на нашем сайте, проигнорируйте это письмо."
+                )
+                
+                msg.body = verification_message
+                mail.send(msg)
+                
+                # Сохраняем ID пользователя в сессии для проверки электронной почты
+                session['verifying_user_id'] = user.id
+                
+                flash('На вашу почту отправлен код подтверждения. Введите его для завершения регистрации.', 'info')
+                return redirect(url_for('verify_email'))
+            except Exception as e:
+                # В случае ошибки отправки удаляем пользователя и отображаем сообщение об ошибке
+                db.session.delete(user)
+                db.session.commit()
+                app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+                flash(f'Произошла ошибка при отправке письма подтверждения: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
 
     return render_template('register.html')
 
@@ -181,6 +226,13 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
+            # Проверяем, подтвержден ли аккаунт
+            if not user.is_verified:
+                # Сохраняем ID пользователя в сессии для проверки электронной почты
+                session['verifying_user_id'] = user.id
+                flash('Ваш аккаунт еще не подтвержден. Пожалуйста, подтвердите вашу электронную почту.', 'warning')
+                return redirect(url_for('verify_email'))
+                
             session['user_id'] = user.id
             session['username'] = user.username
             flash('Вы успешно вошли!', 'success')
@@ -523,6 +575,126 @@ def inject_is_admin():
 # Регистрируем блюпринт для админ-панели
 from admin import admin_bp
 app.register_blueprint(admin_bp)
+
+
+@app.route('/verify-email', methods=['GET', 'POST'])
+def verify_email():
+    # Проверяем, есть ли в сессии ID пользователя для подтверждения
+    verifying_user_id = session.get('verifying_user_id')
+    if not verifying_user_id:
+        flash('Сессия подтверждения истекла или недействительна.', 'error')
+        return redirect(url_for('register'))
+    
+    # Находим пользователя
+    user = User.query.get(verifying_user_id)
+    if not user:
+        flash('Пользователь не найден.', 'error')
+        return redirect(url_for('register'))
+    
+    # Проверяем, не подтвержден ли уже пользователь
+    if user.is_verified:
+        session.pop('verifying_user_id', None)
+        flash('Ваш аккаунт уже подтвержден. Пожалуйста, войдите.', 'info')
+        return redirect(url_for('login'))
+    
+    # Проверяем, не истек ли срок действия кода
+    if not user.verification_expires_at or user.verification_expires_at < datetime.utcnow():
+        # Если срок истек, генерируем новый код и отправляем его
+        verification_code = user.generate_verification_code()
+        db.session.commit()
+        
+        try:
+            msg = Message(
+                'Новый код подтверждения регистрации',
+                recipients=[user.email],
+                charset='utf-8'
+            )
+            
+            verification_message = (
+                "Ваш предыдущий код истек. Вот новый код подтверждения:\n\n"
+                f"{verification_code}\n\n"
+                "Код действителен в течение 30 минут.\n\n"
+                "Если вы не регистрировались на нашем сайте, проигнорируйте это письмо."
+            )
+            
+            msg.body = verification_message
+            mail.send(msg)
+            flash('Срок действия предыдущего кода истек. Новый код отправлен на вашу почту.', 'info')
+        except Exception as e:
+            app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+            flash(f'Произошла ошибка при отправке нового кода: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
+            return redirect(url_for('register'))
+    
+    # Обработка запроса на подтверждение
+    if request.method == 'POST':
+        code = request.form.get('verification_code')
+        
+        if not code:
+            flash('Пожалуйста, введите код подтверждения.', 'error')
+        elif code != user.verification_code:
+            flash('Неверный код подтверждения. Пожалуйста, проверьте и попробуйте снова.', 'error')
+        else:
+            # Код верный, подтверждаем пользователя
+            user.is_verified = True
+            user.verification_code = None  # Очищаем код
+            user.verification_expires_at = None
+            db.session.commit()
+            
+            # Удаляем данные подтверждения из сессии
+            session.pop('verifying_user_id', None)
+            
+            flash('Регистрация успешно подтверждена! Теперь вы можете войти.', 'success')
+            return redirect(url_for('login'))
+    
+    return render_template('verify_email.html')
+
+
+@app.route('/resend-verification', methods=['GET'])
+def resend_verification():
+    # Проверяем, есть ли в сессии ID пользователя для подтверждения
+    verifying_user_id = session.get('verifying_user_id')
+    if not verifying_user_id:
+        flash('Сессия подтверждения истекла или недействительна.', 'error')
+        return redirect(url_for('register'))
+    
+    # Находим пользователя
+    user = User.query.get(verifying_user_id)
+    if not user:
+        flash('Пользователь не найден.', 'error')
+        return redirect(url_for('register'))
+    
+    # Проверяем, не подтвержден ли уже пользователь
+    if user.is_verified:
+        session.pop('verifying_user_id', None)
+        flash('Ваш аккаунт уже подтвержден. Пожалуйста, войдите.', 'info')
+        return redirect(url_for('login'))
+    
+    # Генерируем новый код и отправляем его
+    verification_code = user.generate_verification_code()
+    db.session.commit()
+    
+    try:
+        msg = Message(
+            'Новый код подтверждения регистрации',
+            recipients=[user.email],
+            charset='utf-8'
+        )
+        
+        verification_message = (
+            "Вот новый код подтверждения:\n\n"
+            f"{verification_code}\n\n"
+            "Код действителен в течение 30 минут.\n\n"
+            "Если вы не регистрировались на нашем сайте, проигнорируйте это письмо."
+        )
+        
+        msg.body = verification_message
+        mail.send(msg)
+        flash('Новый код подтверждения отправлен на вашу почту.', 'info')
+    except Exception as e:
+        app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+        flash(f'Произошла ошибка при отправке нового кода: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
+    
+    return redirect(url_for('verify_email'))
 
 
 if __name__ == '__main__':
