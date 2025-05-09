@@ -1,14 +1,7 @@
 /* Основные стили */
 :root {
-    --primary-color: #4d76b3;
-    --primary-hover: #3a5d8f;
-    --bg-color: #f8f9fa;
-    --card-bg: #ffffff;
-    --text-color: #333333;
-    --text-muted: #6c757d;
-    --border-color: #dee2e6;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 2px var(--shadow-color);
+    --shadow-md: 0 2px 4px var(--shadow-color);
     --radius-sm: 4px;
     --radius-md: 6px;
     --transition: all 0.15s ease;
@@ -74,8 +67,9 @@ p {
     padding: 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    background-color: var(--card-bg);
+    background-color: var(--input-bg);
     transition: var(--transition);
+    color: var(--text-color);
 }
 
 .form-control:focus {
@@ -331,8 +325,8 @@ p {
 
 /* Навигация */
 .navbar {
-    background-color: #fff !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-color: var(--nav-bg);
+    box-shadow: var(--shadow-sm);
     padding: 0.5rem 1rem;
 }
 
@@ -522,12 +516,14 @@ img.media-thumbnail[loading="lazy"] {
 }
 
 .drag-overlay-content {
-    background-color: white;
+    background-color: var(--card-bg);
     padding: 2rem;
     border-radius: var(--radius-md);
     text-align: center;
     box-shadow: var(--shadow-md);
     max-width: 90%;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
 
 .drag-overlay-content i {
@@ -592,13 +588,12 @@ img.media-thumbnail[loading="lazy"] {
 
 /* Footer with fixed position at bottom */
 footer {
-    background-color: var(--bg-color);
+    background-color: var(--footer-bg);
     border-top: 1px solid var(--border-color);
-    color: var(--text-color);
     padding: 1.5rem 0;
-    flex-shrink: 0; /* Don't allow footer to shrink */
-    width: 100%;
-    margin-top: auto; /* Push to the bottom when content is short */
+    color: var(--text-color);
+    margin-top: auto;
+    font-size: 0.9rem;
 }
 
 footer h5 {
@@ -610,19 +605,17 @@ footer h5 {
 footer a {
     color: var(--primary-color);
     text-decoration: none;
+    transition: var(--transition);
 }
 
 footer a:hover {
     color: var(--primary-hover);
-    text-decoration: none;
+    text-decoration: underline;
 }
 
 /* Remove underlines from all links on the site */
 a {
-    text-decoration: none;
-}
-
-a:hover {
+    color: var(--primary-color);
     text-decoration: none;
 }
 
@@ -703,4 +696,16 @@ a:hover {
     transform: scale(1.05);
 }
 
-/* Keep existing styles that are needed but not modified above */
+/* Theme transition for smooth theme switching */
+body, 
+.navbar,
+.card,
+.post,
+.modal-content,
+.dropdown-menu,
+.form-control,
+.btn,
+footer,
+a {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

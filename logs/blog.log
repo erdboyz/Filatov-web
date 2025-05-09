@@ -1,0 +1,32 @@
+2025-05-09 14:00:19,497 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-09 14:00:20,629 INFO: Запуск блога [in c:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-09 14:00:41,463 INFO: Успешный вход: admin [in c:\Users\User\PycharmProjects\Blog\app.py:241]
+2025-05-09 14:04:14,864 ERROR: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7fb6sm2412751fa.27 - gsmtp') [in c:\Users\User\PycharmProjects\Blog\app.py:209]
+Traceback (most recent call last):
+  File "c:\Users\User\PycharmProjects\Blog\app.py", line 198, in register
+    mail.send(msg)
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_mail.py", line 165, in configure_host
+    host.login(self.mail.username, self.mail.password)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 750, in login
+    raise last_exception
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 739, in login
+    (code, resp) = self.auth(
+                   ^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
+    raise SMTPAuthenticationError(code, resp)
+smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7fb6sm2412751fa.27 - gsmtp')
+2025-05-09 14:05:41,654 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-09 14:05:42,812 INFO: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:77]
+2025-05-09 14:06:55,087 WARNING: Неудачная попытка входа: dolbaeb с IP 127.0.0.1 [in C:\Users\User\PycharmProjects\Blog\app.py:245]
+2025-05-09 14:06:59,568 INFO: Успешный вход: ebanat [in C:\Users\User\PycharmProjects\Blog\app.py:241]
+2025-05-09 14:09:12,824 WARNING: Неудачная попытка входа: admin с IP 127.0.0.1 [in C:\Users\User\PycharmProjects\Blog\app.py:245]
+2025-05-09 14:09:19,460 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:241]
+2025-05-09 14:21:52,580 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:241]
+2025-05-09 14:26:52,881 WARNING: Неудачная попытка входа: 12уц с IP 127.0.0.1 [in C:\Users\User\PycharmProjects\Blog\app.py:245]
+2025-05-09 14:26:58,998 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:241]
+2025-05-09 14:31:06,415 INFO: Успешный вход: admin [in C:\Users\User\PycharmProjects\Blog\app.py:241]

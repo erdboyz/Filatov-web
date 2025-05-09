@@ -12,6 +12,7 @@
                 <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="list">Основная информация</a>
                 <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="list">Изменить пароль</a>
                 <a href="#privacy" class="list-group-item list-group-item-action" data-bs-toggle="list">Приватность</a>
+                <a href="#theme" class="list-group-item list-group-item-action" data-bs-toggle="list">Внешний вид</a>
             </div>
         </div>
         
@@ -142,6 +143,44 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Настройки внешнего вида -->
+                <div class="tab-pane fade" id="theme">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Настройки внешнего вида</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6 class="mb-3">Тема оформления</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check form-check-inline me-4">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-system" value="system" checked>
+                                        <label class="form-check-label" for="theme-system">
+                                            <i class="fas fa-desktop me-2"></i>Системная
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline me-4">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-light" value="light">
+                                        <label class="form-check-label" for="theme-light">
+                                            <i class="fas fa-sun me-2"></i>Светлая
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-dark" value="dark">
+                                        <label class="form-check-label" for="theme-dark">
+                                            <i class="fas fa-moon me-2"></i>Темная
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Выберите тему оформления для сайта. При выборе системной темы будут использоваться настройки вашей операционной системы.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -260,6 +299,57 @@
                 reader.readAsDataURL(file);
             }
         });
+        
+        // Theme selector functionality
+        const themeSystem = document.getElementById('theme-system');
+        const themeLight = document.getElementById('theme-light');
+        const themeDark = document.getElementById('theme-dark');
+        const storageKey = 'preferred-theme';
+        
+        // Set initial form state based on current theme
+        function initThemeSelector() {
+            const storedTheme = localStorage.getItem(storageKey);
+            
+            if (!storedTheme) {
+                themeSystem.checked = true;
+            } else if (storedTheme === 'light') {
+                themeLight.checked = true;
+            } else if (storedTheme === 'dark') {
+                themeDark.checked = true;
+            }
+        }
+        
+        // Handle theme changes
+        function handleThemeChange() {
+            if (themeSystem.checked) {
+                localStorage.removeItem(storageKey);
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                setTheme(prefersDark ? 'dark' : 'light');
+            } else if (themeLight.checked) {
+                localStorage.setItem(storageKey, 'light');
+                setTheme('light');
+            } else if (themeDark.checked) {
+                localStorage.setItem(storageKey, 'dark');
+                setTheme('dark');
+            }
+        }
+        
+        // Apply theme
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+        
+        // Initialize theme selector
+        initThemeSelector();
+        
+        // Add change listeners
+        themeSystem.addEventListener('change', handleThemeChange);
+        themeLight.addEventListener('change', handleThemeChange);
+        themeDark.addEventListener('change', handleThemeChange);
         
         // Helper functions
         function preventDefault(e) {
