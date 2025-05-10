@@ -1,0 +1,433 @@
+{% extends 'layout.html' %}
+
+{% block title %}Настройки аккаунта{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Настройки аккаунта</h1>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="list">Основная информация</a>
+                <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="list">Изменить пароль</a>
+                <a href="#privacy" class="list-group-item list-group-item-action" data-bs-toggle="list">Приватность</a>
+                <a href="#theme" class="list-group-item list-group-item-action" data-bs-toggle="list">Внешний вид</a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Основная информация профиля -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Основная информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="row mb-4">
+                                    <div class="col-md-4 text-center">
+                                        <div id="avatar-drop-zone" class="drop-zone mb-3">
+                                            {% if user.avatar %}
+                                                <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" 
+                                                     class="rounded-circle img-thumbnail" 
+                                                     style="width: 150px; height: 150px; object-fit: cover;" 
+                                                     alt="Текущий аватар" id="avatar-preview">
+                                                <div class="drop-zone-overlay">
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                </div>
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" 
+                                                     style="width: 150px; height: 150px;" id="avatar-placeholder">
+                                                    <span class="display-4 text-white">{{ user.username[0].upper() }}</span>
+                                                </div>
+                                                <img src="" class="rounded-circle img-thumbnail d-none" 
+                                                     style="width: 150px; height: 150px; object-fit: cover;" 
+                                                     alt="Предпросмотр аватара" id="avatar-preview">
+                                                <div class="drop-zone-overlay">
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                </div>
+                                            {% endif %}
+                                            <input type="hidden" name="remove_avatar" id="remove_avatar_input" value="0">
+                                            <input type="file" class="d-none" id="avatar" name="avatar" accept="image/jpeg,image/png,image/gif">
+                                        </div>
+                                        <div class="d-flex justify-content-center gap-2 mb-3">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="select-avatar-btn">
+                                                <i class="fas fa-image me-1"></i> Выбрать аватар
+                                            </button>
+                                            {% if user.avatar %}
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id="remove-avatar">
+                                                <i class="fas fa-trash-alt me-1"></i> Удалить аватар
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-text">Разрешены форматы: JPG, PNG, GIF</div>
+                                    </div>
+                                    
+                                    <div class="col-md-8">
+                                        <div class="form-group mb-3">
+                                            <label for="username">Имя пользователя:</label>
+                                            <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="nickname">Никнейм (отображаемое имя):</label>
+                                            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ user.nickname or '' }}" placeholder="Оставьте пустым, чтобы использовать имя пользователя">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label for="email">Email:</label>
+                                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Изменение пароля -->
+                <div class="tab-pane fade" id="password">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Изменить пароль</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('update_password') }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="form-group mb-3">
+                                    <label for="old_password">Текущий пароль:</label>
+                                    <input type="password" class="form-control" id="old_password" name="old_password" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="new_password">Новый пароль:</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="confirm_new_password">Подтвердите новый пароль:</label>
+                                    <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Настройки приватности -->
+                <div class="tab-pane fade" id="privacy">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Настройки приватности</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('update_privacy') }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="form-group mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="hide_email" name="hide_email" {{ 'checked' if user.hide_email else '' }}>
+                                        <label class="form-check-label" for="hide_email">Скрыть Email адрес в профиле</label>
+                                    </div>
+                                    <div class="form-text text-muted">Когда эта опция включена, ваш Email будет виден только вам.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="hide_posts" name="hide_posts" {{ 'checked' if user.hide_posts else '' }}>
+                                        <label class="form-check-label" for="hide_posts">Скрыть посты в профиле</label>
+                                    </div>
+                                    <div class="form-text text-muted">Когда эта опция включена, ваши посты будут скрыты в вашем профиле, но будут отображаться на главной странице.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить настройки приватности</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Настройки внешнего вида -->
+                <div class="tab-pane fade" id="theme">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Настройки внешнего вида</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6 class="mb-3">Тема оформления</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check form-check-inline me-4">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-system" value="system" checked>
+                                        <label class="form-check-label" for="theme-system">
+                                            <i class="fas fa-desktop me-2"></i>Системная
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline me-4">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-light" value="light">
+                                        <label class="form-check-label" for="theme-light">
+                                            <i class="fas fa-sun me-2"></i>Светлая
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="theme-option" id="theme-dark" value="dark">
+                                        <label class="form-check-label" for="theme-dark">
+                                            <i class="fas fa-moon me-2"></i>Темная
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Выберите тему оформления для сайта. При выборе системной темы будут использоваться настройки вашей операционной системы.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Avatar functionality
+        const avatarDropZone = document.getElementById('avatar-drop-zone');
+        const avatarInput = document.getElementById('avatar');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const avatarPlaceholder = document.getElementById('avatar-placeholder');
+        const removeAvatarBtn = document.getElementById('remove-avatar');
+        const selectAvatarBtn = document.getElementById('select-avatar-btn');
+        const removeAvatarInput = document.getElementById('remove_avatar_input');
+        
+        // Handle select avatar button
+        if (selectAvatarBtn) {
+            selectAvatarBtn.addEventListener('click', function() {
+                avatarInput.click();
+            });
+        }
+        
+        // Handle avatar removal
+        if (removeAvatarBtn) {
+            removeAvatarBtn.addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите удалить свой аватар?')) {
+                    // Set hidden input value to 1 to indicate avatar removal
+                    removeAvatarInput.value = '1';
+                    
+                    // Hide the current avatar preview
+                    avatarPreview.classList.add('d-none');
+                    
+                    // Show placeholder if it exists
+                    if (avatarPlaceholder) {
+                        avatarPlaceholder.classList.remove('d-none');
+                    }
+                    
+                    // Hide the remove button until form is submitted
+                    removeAvatarBtn.classList.add('d-none');
+                }
+            });
+        }
+        
+        // Active tab from URL hash
+        const hash = window.location.hash;
+        if (hash) {
+            const tab = document.querySelector(`.list-group-item[href="${hash}"]`);
+            if (tab) {
+                tab.click();
+            }
+        }
+        
+        // Process URL hash changes
+        window.addEventListener('hashchange', function() {
+            const hash = window.location.hash;
+            if (hash) {
+                const tab = document.querySelector(`.list-group-item[href="${hash}"]`);
+                if (tab) {
+                    tab.click();
+                }
+            }
+        });
+        
+        // Prevent default behaviors for drag and drop events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            avatarDropZone.addEventListener(eventName, preventDefault, false);
+        });
+        
+        // Highlight drop zone on drag over
+        ['dragenter', 'dragover'].forEach(eventName => {
+            avatarDropZone.addEventListener(eventName, highlight, false);
+        });
+        
+        // Remove highlight on drag leave or drop
+        ['dragleave', 'drop'].forEach(eventName => {
+            avatarDropZone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        // Handle file drop
+        avatarDropZone.addEventListener('drop', handleDrop, false);
+        
+        // Open file dialog when clicking on drop zone
+        avatarDropZone.addEventListener('click', function(e) {
+            // Don't open file dialog if clicking on buttons or images
+            if (e.target === avatarDropZone) {
+                avatarInput.click();
+            }
+        });
+        
+        // Handle file selection
+        avatarInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const reader = new FileReader();
+                
+                // Reset the remove avatar flag since we're adding a new avatar
+                if (removeAvatarInput) {
+                    removeAvatarInput.value = '0';
+                }
+                
+                reader.onload = function(e) {
+                    if (avatarPlaceholder) {
+                        avatarPlaceholder.classList.add('d-none');
+                    }
+                    
+                    avatarPreview.src = e.target.result;
+                    avatarPreview.classList.remove('d-none');
+                    
+                    // Show the remove button since we now have an avatar preview
+                    if (removeAvatarBtn) {
+                        removeAvatarBtn.classList.remove('d-none');
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Theme selector functionality
+        const themeSystem = document.getElementById('theme-system');
+        const themeLight = document.getElementById('theme-light');
+        const themeDark = document.getElementById('theme-dark');
+        const storageKey = 'preferred-theme';
+        
+        // Set initial form state based on current theme
+        function initThemeSelector() {
+            const storedTheme = localStorage.getItem(storageKey);
+            
+            if (!storedTheme) {
+                themeSystem.checked = true;
+            } else if (storedTheme === 'light') {
+                themeLight.checked = true;
+            } else if (storedTheme === 'dark') {
+                themeDark.checked = true;
+            }
+        }
+        
+        // Handle theme changes
+        function handleThemeChange() {
+            if (themeSystem.checked) {
+                localStorage.removeItem(storageKey);
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                setTheme(prefersDark ? 'dark' : 'light');
+            } else if (themeLight.checked) {
+                localStorage.setItem(storageKey, 'light');
+                setTheme('light');
+            } else if (themeDark.checked) {
+                localStorage.setItem(storageKey, 'dark');
+                setTheme('dark');
+            }
+        }
+        
+        // Apply theme
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+        
+        // Initialize theme selector
+        initThemeSelector();
+        
+        // Add change listeners
+        themeSystem.addEventListener('change', handleThemeChange);
+        themeLight.addEventListener('change', handleThemeChange);
+        themeDark.addEventListener('change', handleThemeChange);
+        
+        // Helper functions
+        function preventDefault(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight() {
+            avatarDropZone.classList.add('drop-zone-drag');
+        }
+        
+        function unhighlight() {
+            avatarDropZone.classList.remove('drop-zone-drag');
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                avatarInput.files = files;
+                const event = new Event('change');
+                avatarInput.dispatchEvent(event);
+            }
+        }
+    });
+</script>
+
+<style>
+    #avatar-drop-zone {
+        cursor: pointer;
+        border: 2px dashed #ccc;
+        border-radius: 50%;
+        width: 160px;
+        height: 160px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #avatar-drop-zone.drop-zone-drag {
+        border-color: #007bff;
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    #avatar-drop-zone img, 
+    #avatar-drop-zone .bg-secondary {
+        border-radius: 50%;
+        width: 150px !important;
+        height: 150px !important;
+        position: absolute;
+    }
+    
+    .drop-zone-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+        border-radius: 50%;
+    }
+    
+    .drop-zone-overlay i {
+        font-size: 2rem;
+    }
+    
+    #avatar-drop-zone:hover .drop-zone-overlay {
+        opacity: 1;
+    }
+</style>
+{% endblock %} 

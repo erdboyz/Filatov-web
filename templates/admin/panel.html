@@ -38,7 +38,7 @@
                                 <tr>
                                     <td>{{ post.id }}</td>
                                     <td class="text-break">{{ post.title }}</td>
-                                    <td>{{ post.author.username }}</td>
+                                    <td>{{ post.author.nickname or post.author.username }}</td>
                                     <td>{{ post.created_at.strftime('%d.%m.%Y') }}</td>
                                     <td>
                                         {% if post.media_files %}
@@ -99,7 +99,12 @@
                             {% for user in users %}
                                 <tr>
                                     <td>{{ user.id }}</td>
-                                    <td>{{ user.username }}</td>
+                                    <td>
+                                        {{ user.username }}
+                                        {% if user.nickname %}
+                                            <span class="text-muted">({{ user.nickname }})</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="text-break">{{ user.email }}</td>
                                     <td>{{ user.posts|length }}</td>
                                     <td>

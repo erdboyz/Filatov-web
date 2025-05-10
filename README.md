@@ -37,22 +37,23 @@ A Flask-based blog application with user authentication, email verification, and
    Configure your email service by setting environment variables:
    - Windows:
      ```
-     set MAIL_USERNAME=your-email@gmail.com
-     set MAIL_PASSWORD=your-app-password
-     set MAIL_DEFAULT_SENDER=your-email@gmail.com
+     set MAIL_USERNAME=your-email@example.com
+     set MAIL_PASSWORD=your-email-password
+     set MAIL_DEFAULT_SENDER=your-email@example.com
      set SECRET_KEY=your-secret-key
      ```
    - macOS/Linux:
      ```
-     export MAIL_USERNAME=your-email@gmail.com
-     export MAIL_PASSWORD=your-app-password
-     export MAIL_DEFAULT_SENDER=your-email@gmail.com
+     export MAIL_USERNAME=your-email@example.com
+     export MAIL_PASSWORD=your-email-password
+     export MAIL_DEFAULT_SENDER=your-email@example.com
      export SECRET_KEY=your-secret-key
      ```
 
-   For Gmail, you'll need to:
-   - Enable 2-factor authentication
-   - Create an App Password in your Google Account security settings
+   For most email providers, you'll need to:
+   - Enable SMTP access in your email account settings
+   - Use application-specific passwords if your account has 2FA enabled
+   - Check provider-specific security settings if you encounter authentication issues
 
    Alternatively, edit `app.py` directly with your credentials (for development only, not recommended for production).
 
@@ -81,9 +82,9 @@ A Flask-based blog application with user authentication, email verification, and
 
 2. **Set environment variables on your server**
    ```
-   MAIL_USERNAME=your-email@gmail.com
-   MAIL_PASSWORD=your-app-password
-   MAIL_DEFAULT_SENDER=your-email@gmail.com
+   MAIL_USERNAME=your-email@example.com
+   MAIL_PASSWORD=your-email-password
+   MAIL_DEFAULT_SENDER=your-email@example.com
    SECRET_KEY=your-secret-key
    ```
 
@@ -143,22 +144,23 @@ A Flask-based blog application with user authentication, email verification, and
    Настройте ваш почтовый сервис, установив переменные окружения:
    - Windows:
      ```
-     set MAIL_USERNAME=your-email@gmail.com
-     set MAIL_PASSWORD=your-app-password
-     set MAIL_DEFAULT_SENDER=your-email@gmail.com
+     set MAIL_USERNAME=your-email@example.com
+     set MAIL_PASSWORD=your-email-password
+     set MAIL_DEFAULT_SENDER=your-email@example.com
      set SECRET_KEY=your-secret-key
      ```
    - macOS/Linux:
      ```
-     export MAIL_USERNAME=your-email@gmail.com
-     export MAIL_PASSWORD=your-app-password
-     export MAIL_DEFAULT_SENDER=your-email@gmail.com
+     export MAIL_USERNAME=your-email@example.com
+     export MAIL_PASSWORD=your-email-password
+     export MAIL_DEFAULT_SENDER=your-email@example.com
      export SECRET_KEY=your-secret-key
      ```
 
-   Для Gmail вам потребуется:
-   - Включить двухфакторную аутентификацию
-   - Создать пароль приложения в настройках безопасности Google Account
+   Для большинства почтовых сервисов вам потребуется:
+   - Включить доступ SMTP в настройках вашей учетной записи электронной почты
+   - Использовать специальные пароли приложений, если в вашей учетной записи включена двухфакторная аутентификация
+   - Проверить настройки безопасности вашего почтового провайдера при возникновении проблем с аутентификацией
 
    Альтернативно, вы можете напрямую отредактировать файл `app.py` с вашими учетными данными (только для разработки, не рекомендуется для продакшена).
 
@@ -187,9 +189,9 @@ A Flask-based blog application with user authentication, email verification, and
 
 2. **Установить переменные окружения на вашем сервере**
    ```
-   MAIL_USERNAME=your-email@gmail.com
-   MAIL_PASSWORD=your-app-password
-   MAIL_DEFAULT_SENDER=your-email@gmail.com
+   MAIL_USERNAME=your-email@example.com
+   MAIL_PASSWORD=your-email-password
+   MAIL_DEFAULT_SENDER=your-email@example.com
    SECRET_KEY=your-secret-key
    ```
 

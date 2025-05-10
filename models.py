@@ -21,6 +21,9 @@ class User(db.Model):
     verification_expires_at = db.Column(db.DateTime, nullable=True)
     posts = db.relationship('Post', backref='author', lazy=True)
     comments = db.relationship('Comment', backref='author', lazy=True)
+    nickname = db.Column(db.String(80), nullable=True)
+    hide_email = db.Column(db.Boolean, default=False)
+    hide_posts = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
