@@ -1,8 +1,13 @@
 flask==2.3.2
 flask-sqlalchemy==3.0.5
 werkzeug==2.3.6
-gunicorn
+gunicorn==21.2.0
 flask-wtf==1.1.1
 flask-bcrypt==1.0.1
 flask-limiter==3.3.1
 flask-mail==0.9.1
+email-validator==2.0.0
+Jinja2==3.1.2
+itsdangerous==2.1.2
+SQLAlchemy==2.0.17
+Pillow==9.5.0

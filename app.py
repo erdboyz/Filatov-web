@@ -65,6 +65,14 @@ db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
 
+# Create database tables if they don't exist
+with app.app_context():
+    try:
+        db.create_all()
+        app.logger.info('Database tables created or confirmed to exist')
+    except Exception as e:
+        app.logger.error(f'Failed to create database tables: {str(e)}')
+
 # Enhanced logging setup
 if not os.path.exists('logs'):
     os.makedirs('logs')
