@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Filatov{% endblock %}</title>
+    <!-- Prevent theme flash with immediate theme application -->
+    <script>
+        (function() {
+            // Get theme immediately to prevent flash
+            const storedTheme = localStorage.getItem('preferred-theme');
+            
+            // Apply theme before page renders
+            if (storedTheme === 'dark' || 
+                (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.head.insertAdjacentHTML('beforeend', '<meta name="color-scheme" content="dark">');
+            } else {
+                document.head.insertAdjacentHTML('beforeend', '<meta name="color-scheme" content="light">');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
@@ -75,9 +91,14 @@
             z-index: 1;
             pointer-events: none;
         }
+        
+        /* Prevent transitions during initial page load */
+        body.no-transition * {
+            transition: none !important;
+        }
     </style>
 </head>
-<body>
+<body class="no-transition">
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">

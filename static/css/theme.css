@@ -21,6 +21,12 @@
     --btn-default-text: #333333;
 }
 
+/* Base background colors for html and body */
+html, body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
 /* Dark theme */
 [data-theme="dark"] {
     --primary-color: #5a87c8;
@@ -41,6 +47,13 @@
     --btn-default-bg: #2c2c2c;
     --btn-default-border: #444444;
     --btn-default-text: #e0e0e0;
+}
+
+/* Ensure dark mode applies to the root elements immediately */
+[data-theme="dark"] html, 
+[data-theme="dark"] body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 /* Override Bootstrap classes for dark mode */
