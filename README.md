@@ -2,6 +2,10 @@
 
 A Flask-based blog application with user authentication, email verification, and admin functionality.
 
+## Live Demo
+
+The application is deployed and accessible at: [https://filatov-web.onrender.com](https://filatov-web.onrender.com)
+
 ## English Instructions
 
 ### Local Development Setup
@@ -107,9 +111,30 @@ A Flask-based blog application with user authentication, email verification, and
    
    Obtain and configure an SSL certificate for secure communication.
 
+### Deployment on Render
+
+This application is configured to run on Render. To deploy your own instance:
+
+1. Fork or clone this repository to your GitHub account
+2. Create a new Web Service on Render
+3. Connect to your GitHub repository
+4. Configure the build command: `chmod +x build.sh && ./build.sh`
+5. Configure the start command: `gunicorn app:app`
+6. Add the required environment variables mentioned above
+7. Deploy
+
+**Note about database persistence on Render:**
+When using SQLite with Render, be aware that the filesystem is ephemeral. If you need a persistent database:
+- Consider using a managed PostgreSQL database
+- Or upgrade to a plan with disk persistence and configure your application to use the persistent directory
+
 ---
 
 ## Инструкции на русском языке
+
+### Демо-версия
+
+Приложение развернуто и доступно по адресу: [https://filatov-web.onrender.com](https://filatov-web.onrender.com)
 
 ### Локальная настройка для разработки
 
@@ -212,4 +237,21 @@ A Flask-based blog application with user authentication, email verification, and
 
 6. **Настроить SSL/TLS**
    
-   Получите и настройте SSL-сертификат для безопасной связи. 
+   Получите и настройте SSL-сертификат для безопасной связи.
+
+### Развертывание на Render
+
+Это приложение настроено для работы на Render. Чтобы развернуть свой экземпляр:
+
+1. Сделайте форк или клонируйте этот репозиторий в свой аккаунт GitHub
+2. Создайте новый Web Service на Render
+3. Подключитесь к своему репозиторию GitHub
+4. Настройте команду сборки: `chmod +x build.sh && ./build.sh`
+5. Настройте команду запуска: `gunicorn app:app`
+6. Добавьте необходимые переменные окружения, указанные выше
+7. Разверните приложение
+
+**Примечание о сохранении базы данных на Render:**
+При использовании SQLite с Render имейте в виду, что файловая система эфемерна. Если вам нужна постоянная база данных:
+- Рассмотрите возможность использования управляемой базы данных PostgreSQL
+- Или перейдите на тарифный план с постоянным хранилищем и настройте приложение для использования постоянного каталога 
