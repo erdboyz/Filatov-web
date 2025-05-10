@@ -1,10 +1,5 @@
-2025-05-09 21:36:47,865 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 21:36:49,021 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 22:26:55,673 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 22:28:21,057 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 22:33:02,907 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 22:33:04,052 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-09 22:33:59,801 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819238-vXlvBIpLe8c0') [in C:\Users\User\PycharmProjects\Blog\app.py:393]
+2025-05-09 22:33:59,801 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819238-vXlvBIpLe8c0')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819238-vXlvBIpLe8c0'), <traceback object at 0x0000020B8F4E20C0>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 379, in register
     mail.send(msg)
@@ -23,8 +18,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819238-vXlvBIpLe8c0')
-2025-05-09 22:37:03,714 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-09 22:39:18,668 [-] [ERROR] [user:-] [ip:-]: Unhandled exception: 400 Bad Request: The CSRF session token is missing. [request_id:-] [user:-] [ip:127.0.0.1] [in C:\Users\User\PycharmProjects\Blog\app.py:201]
+2025-05-09 22:39:18,668 [ERROR]: Unhandled exception: 400 Bad Request: The CSRF session token is missing. [request_id:-] [user:-] [ip:127.0.0.1]
+(<class 'flask_wtf.csrf.CSRFError'>, <CSRFError '400: Bad Request'>, <traceback object at 0x000001F88279C400>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_wtf\csrf.py", line 261, in protect
     validate_csrf(self._get_csrf_token())
@@ -48,7 +43,8 @@ Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_wtf\csrf.py", line 307, in _error_response
     raise CSRFError(reason)
 flask_wtf.csrf.CSRFError: 400 Bad Request: The CSRF session token is missing.
-2025-05-09 22:40:15,186 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-09 22:40:15,186 [ERROR]: Ошибка отправки письма: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера
+(<class 'TimeoutError'>, TimeoutError(10060, 'Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера', None, 10060, None), <traceback object at 0x000001F882842040>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -79,7 +75,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 837, in create_connection
     sock.connect(sa)
 TimeoutError: [WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера
-2025-05-09 22:40:33,509 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819632-VelaTUoLZGk0') [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-09 22:40:33,509 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819632-VelaTUoLZGk0')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819632-VelaTUoLZGk0'), <traceback object at 0x000001F882808500>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -98,12 +95,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746819632-VelaTUoLZGk0')
-2025-05-09 22:44:20,109 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-09 22:44:48,084 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-10 13:03:51,261 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:03:52,413 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:03:54,584 [55c768bc] [WARNING] [user:-] [ip:127.0.0.1]: 404 ошибка: /favicon.ico [in C:\Users\User\PycharmProjects\Blog\app.py:853]
-2025-05-10 13:04:47,741 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-10 13:04:47,741 [ERROR]: Ошибка отправки письма: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение
+(<class 'ConnectionAbortedError'>, ConnectionAbortedError(10053, 'Программа на вашем хост-компьютере разорвала установленное подключение', None, 10053, None), <traceback object at 0x000002B4EC282340>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -134,7 +127,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 837, in create_connection
     sock.connect(sa)
 ConnectionAbortedError: [WinError 10053] Программа на вашем хост-компьютере разорвала установленное подключение
-2025-05-10 13:05:03,177 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871502-15dNjZ7Lda60') [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-10 13:05:03,177 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871502-15dNjZ7Lda60')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871502-15dNjZ7Lda60'), <traceback object at 0x000002B4EC29FB80>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -153,9 +147,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871502-15dNjZ7Lda60')
-2025-05-10 13:05:57,696 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:05:58,845 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:06:19,416 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871579-I6dabrxLg0U0') [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-10 13:06:19,416 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871579-I6dabrxLg0U0')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871579-I6dabrxLg0U0'), <traceback object at 0x000001B78AD75A00>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -174,9 +167,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: Invalid user or password! 1746871579-I6dabrxLg0U0')
-2025-05-10 13:06:50,827 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:06:51,976 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:07:09,998 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746871629-87dt7sxLg0U0') [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-10 13:07:09,998 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746871629-87dt7sxLg0U0')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746871629-87dt7sxLg0U0'), <traceback object at 0x0000020F0BB986C0>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -195,9 +187,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746871629-87dt7sxLg0U0')
-2025-05-10 13:08:10,386 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:13:32,647 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-10 13:15:42,989 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 2adb3069b0e04-54fc64bfc92sm604146e87.200 - gsmtp') [in C:\Users\User\PycharmProjects\Blog\app.py:393]
+2025-05-10 13:15:42,989 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 2adb3069b0e04-54fc64bfc92sm604146e87.200 - gsmtp')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 2adb3069b0e04-54fc64bfc92sm604146e87.200 - gsmtp'), <traceback object at 0x0000024874B3DA00>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 379, in register
     mail.send(msg)
@@ -216,9 +207,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 2adb3069b0e04-54fc64bfc92sm604146e87.200 - gsmtp')
-2025-05-10 13:16:57,205 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-10 13:16:58,327 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:140]
-2025-05-10 13:17:04,636 [-] [ERROR] [user:-] [ip:-]: Unhandled exception: 400 Bad Request: The CSRF session token is missing. [request_id:-] [user:-] [ip:127.0.0.1] [in C:\Users\User\PycharmProjects\Blog\app.py:200]
+2025-05-10 13:17:04,636 [ERROR]: Unhandled exception: 400 Bad Request: The CSRF session token is missing. [request_id:-] [user:-] [ip:127.0.0.1]
+(<class 'flask_wtf.csrf.CSRFError'>, <CSRFError '400: Bad Request'>, <traceback object at 0x000001CF97EFA380>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_wtf\csrf.py", line 261, in protect
     validate_csrf(self._get_csrf_token())
@@ -242,7 +232,8 @@ Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\.venv\Lib\site-packages\flask_wtf\csrf.py", line 307, in _error_response
     raise CSRFError(reason)
 flask_wtf.csrf.CSRFError: 400 Bad Request: The CSRF session token is missing.
-2025-05-10 13:17:32,512 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7dd4sm5383261fa.43 - gsmtp') [in C:\Users\User\PycharmProjects\Blog\app.py:393]
+2025-05-10 13:17:32,512 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7dd4sm5383261fa.43 - gsmtp')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7dd4sm5383261fa.43 - gsmtp'), <traceback object at 0x000001CF97FB97C0>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 379, in register
     mail.send(msg)
@@ -261,8 +252,8 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 38308e7fff4ca-326c33b7dd4sm5383261fa.43 - gsmtp')
-2025-05-10 13:18:19,972 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:18:38,084 [-] [ERROR] [user:-] [ip:-]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746872317-aIdqbHxLda60') [in C:\Users\User\PycharmProjects\Blog\app.py:394]
+2025-05-10 13:18:38,084 [ERROR]: Ошибка отправки письма: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746872317-aIdqbHxLda60')
+(<class 'smtplib.SMTPAuthenticationError'>, SMTPAuthenticationError(535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746872317-aIdqbHxLda60'), <traceback object at 0x000002EDDAFA28C0>)
 Traceback (most recent call last):
   File "C:\Users\User\PycharmProjects\Blog\app.py", line 380, in register
     mail.send(msg)
@@ -281,6 +272,3 @@ Traceback (most recent call last):
   File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Error: authentication failed: This user does not have access rights to this service 1746872317-aIdqbHxLda60')
-2025-05-10 13:20:19,578 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:25:58,652 [-] [INFO] [user:-] [ip:-]: Запуск блога [in C:\Users\User\PycharmProjects\Blog\app.py:141]
-2025-05-10 13:26:18,415 [-] [INFO] [user:-] [ip:-]: Код подтверждения отправлен: esaulov-ilya08@mail.ru [in C:\Users\User\PycharmProjects\Blog\app.py:385]

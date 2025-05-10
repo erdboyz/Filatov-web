@@ -12,6 +12,8 @@ from flask_limiter.util import get_remote_address
 import json
 from flask_mail import Mail, Message
 from datetime import datetime
+import time
+import traceback
 
 from models import db, User, Post, Comment, bcrypt
 
@@ -43,13 +45,14 @@ app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['jpeg', 'jpg', 'png', 'gif']
 app.config['ALLOWED_VIDEO_EXTENSIONS'] = ['mp4', 'mov', 'avi', 'webm']
 
 # Настройка Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-# Ensure there are NO non-ASCII characters (like spaces or invisible characters) in these strings
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or 'example@gmail.com'
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or 'your-password'
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or 'example@gmail.com'
+app.config['MAIL_SERVER'] = 'smtp.yandex.ru'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or 'your-yandex-email@ya.ru'
+# For Yandex personal accounts, create an app password in the account security settings
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or 'your-yandex-email@ya.ru'
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or 'your-app-password'
 app.config['MAIL_ASCII_ATTACHMENTS'] = False
 app.config['MAIL_DEBUG'] = True  # Enable mail debug
 
@@ -62,19 +65,146 @@ db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
 
-# Настройка логирования
+# Enhanced logging setup
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
-file_handler = RotatingFileHandler('logs/blog.log', maxBytes=10240, backupCount=10)
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-))
+# Configure main application logger
+class RequestFormatter(logging.Formatter):
+    def format(self, record):
+        if hasattr(record, 'request_id'):
+            record.request_id = record.request_id
+        else:
+            record.request_id = '-'
+            
+        if hasattr(record, 'user_id'):
+            record.user_id = record.user_id
+        else:
+            record.user_id = '-'
+            
+        if hasattr(record, 'ip'):
+            record.ip = record.ip
+        else:
+            record.ip = '-'
+            
+        return super().format(record)
+
+# Main application log
+app_formatter = RequestFormatter(
+    '%(asctime)s [%(request_id)s] [%(levelname)s] [user:%(user_id)s] [ip:%(ip)s]: %(message)s [in %(pathname)s:%(lineno)d]'
+)
+file_handler = RotatingFileHandler('logs/blog.log', maxBytes=10485760, backupCount=20, encoding='utf-8')
+file_handler.setFormatter(app_formatter)
 file_handler.setLevel(logging.INFO)
 
+# Security log for authentication and security-related events
+security_formatter = RequestFormatter(
+    '%(asctime)s [%(request_id)s] [%(levelname)s] [user:%(user_id)s] [ip:%(ip)s]: %(message)s'
+)
+security_handler = RotatingFileHandler('logs/security.log', maxBytes=10485760, backupCount=20, encoding='utf-8')
+security_handler.setFormatter(security_formatter)
+security_handler.setLevel(logging.INFO)
+
+# Access log for HTTP requests
+access_formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s]: %(message)s'
+)
+access_handler = RotatingFileHandler('logs/access.log', maxBytes=10485760, backupCount=20, encoding='utf-8')
+access_handler.setFormatter(access_formatter)
+access_handler.setLevel(logging.INFO)
+
+# Error log specifically for errors
+error_formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s]: %(message)s\n%(exc_info)s'
+)
+error_handler = RotatingFileHandler('logs/error.log', maxBytes=10485760, backupCount=20, encoding='utf-8')
+error_handler.setFormatter(error_formatter)
+error_handler.setLevel(logging.ERROR)
+
+# Create and configure loggers
 app.logger.addHandler(file_handler)
+app.logger.addHandler(error_handler)
 app.logger.setLevel(logging.INFO)
+
+# Create security logger
+security_logger = logging.getLogger('security')
+security_logger.addHandler(security_handler)
+security_logger.setLevel(logging.INFO)
+security_logger.propagate = False
+
+# Create access logger
+access_logger = logging.getLogger('access')
+access_logger.addHandler(access_handler)
+access_logger.setLevel(logging.INFO)
+access_logger.propagate = False
+
 app.logger.info('Запуск блога')
+
+# Log all requests
+@app.before_request
+def log_request_info():
+    # Generate a unique request ID
+    request_id = str(uuid.uuid4())[:8]
+    request.request_id = request_id
+    
+    # Get user ID if authenticated
+    user_id = session.get('user_id', '-')
+    
+    # Get client IP
+    ip = request.remote_addr
+    
+    # Log the request
+    access_logger.info(
+        f'Request: {request.method} {request.path} [request_id:{request_id}] [user:{user_id}] [ip:{ip}]'
+    )
+    
+    # Set start time to calculate response time
+    request.start_time = time.time()
+
+@app.after_request
+def log_response_info(response):
+    # Calculate response time
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+    else:
+        duration = 0
+    
+    # Get request ID
+    request_id = getattr(request, 'request_id', '-')
+    
+    # Get user ID if authenticated
+    user_id = session.get('user_id', '-')
+    
+    # Get client IP
+    ip = request.remote_addr
+    
+    # Log the response
+    access_logger.info(
+        f'Response: {request.method} {request.path} {response.status_code} [{duration:.4f}s] [request_id:{request_id}] [user:{user_id}] [ip:{ip}]'
+    )
+    
+    return response
+
+# Enhanced error logging
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Get request ID
+    request_id = getattr(request, 'request_id', '-')
+    
+    # Get user ID if authenticated
+    user_id = session.get('user_id', '-')
+    
+    # Get client IP
+    ip = request.remote_addr
+    
+    # Log the error with traceback
+    app.logger.error(
+        f'Unhandled exception: {str(e)} [request_id:{request_id}] [user:{user_id}] [ip:{ip}]',
+        exc_info=True
+    )
+    
+    # Return an appropriate response
+    return render_template('error.html', error=str(e)), 500
 
 # Функция проверки, авторизован ли пользователь
 def is_authenticated():
@@ -158,16 +288,57 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
+        
+        # Get request info for logging
+        request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+        ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
 
         # Проверки данных
         if not username or not email or not password or not confirm_password:
             flash('Все поля обязательны для заполнения.', 'error')
+            security_logger.warning(
+                f'Неудачная попытка регистрации: неполные данные формы',
+                extra={
+                    'request_id': request_id,
+                    'user_id': '-',
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         elif password != confirm_password:
             flash('Пароли не совпадают.', 'error')
+            security_logger.warning(
+                f'Неудачная попытка регистрации: несовпадение паролей',
+                extra={
+                    'request_id': request_id,
+                    'user_id': '-', 
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         elif User.query.filter_by(username=username).first():
             flash('Данное имя пользователя уже занято.', 'error')
+            security_logger.warning(
+                f'Неудачная попытка регистрации: имя пользователя занято - {username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': '-',
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         elif User.query.filter_by(email=email).first():
             flash('Данный email уже используется.', 'error')
+            security_logger.warning(
+                f'Неудачная попытка регистрации: email занят - {email}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': '-',
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         else:
             # Создаем нового пользователя (неподтвержденного)
             user = User(username=username, email=email, is_verified=False)
@@ -178,6 +349,17 @@ def register():
             
             db.session.add(user)
             db.session.commit()
+            
+            # Log successful registration
+            security_logger.info(
+                f'Новый пользователь зарегистрирован (неподтвержденный): {username}, {email}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
             
             # Отправляем письмо с кодом подтверждения
             try:
@@ -200,13 +382,26 @@ def register():
                 # Сохраняем ID пользователя в сессии для проверки электронной почты
                 session['verifying_user_id'] = user.id
                 
+                app.logger.info(f'Код подтверждения отправлен: {email}')
                 flash('На вашу почту отправлен код подтверждения. Введите его для завершения регистрации.', 'info')
                 return redirect(url_for('verify_email'))
             except Exception as e:
                 # В случае ошибки отправки удаляем пользователя и отображаем сообщение об ошибке
                 db.session.delete(user)
                 db.session.commit()
-                app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+                
+                error_msg = f'Ошибка отправки письма: {str(e)}'
+                app.logger.error(error_msg, exc_info=True)
+                security_logger.error(
+                    f'Регистрация отменена из-за ошибки отправки письма: {str(e)}',
+                    extra={
+                        'request_id': request_id,
+                        'user_id': '-',
+                        'ip': ip,
+                        'user_agent': user_agent
+                    }
+                )
+                
                 flash(f'Произошла ошибка при отправке письма подтверждения: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
 
     return render_template('register.html')
@@ -222,6 +417,11 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        # Get request info for logging
+        request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+        ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
 
         user = User.query.filter_by(username=username).first()
 
@@ -230,6 +430,14 @@ def login():
             if not user.is_verified:
                 # Сохраняем ID пользователя в сессии для проверки электронной почты
                 session['verifying_user_id'] = user.id
+                security_logger.warning(
+                    f'Попытка входа в неподтвержденный аккаунт: {username}',
+                    extra={
+                        'request_id': request_id,
+                        'user_id': user.id,
+                        'ip': ip
+                    }
+                )
                 flash('Ваш аккаунт еще не подтвержден. Пожалуйста, подтвердите вашу электронную почту.', 'warning')
                 return redirect(url_for('verify_email'))
                 
@@ -237,12 +445,31 @@ def login():
             session['username'] = user.username
             if user.nickname:
                 session['nickname'] = user.nickname
+                
+            # Log successful login with security logger
+            security_logger.info(
+                f'Успешный вход: {username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
             flash('Вы успешно вошли!', 'success')
-            app.logger.info(f'Успешный вход: {username}')
             return redirect(url_for('index'))
         else:
+            # Log failed login attempt with security logger
+            security_logger.warning(
+                f'Неудачная попытка входа: {username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': '-',
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
             flash('Неверное имя пользователя или пароль.', 'error')
-            app.logger.warning(f'Неудачная попытка входа: {username} с IP {request.remote_addr}')
 
     return render_template('login.html')
 
@@ -250,9 +477,29 @@ def login():
 # Выход из системы
 @app.route('/logout')
 def logout():
+    # Get user info before clearing the session
+    user_id = session.get('user_id')
+    username = session.get('username')
+    
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    
     session.pop('user_id', None)
     session.pop('username', None)
     session.pop('nickname', None)
+    
+    # Log logout with security logger if user was logged in
+    if user_id:
+        security_logger.info(
+            f'Пользователь вышел из системы: {username}',
+            extra={
+                'request_id': request_id,
+                'user_id': user_id,
+                'ip': ip
+            }
+        )
+    
     flash('Вы вышли из системы.', 'success')
     return redirect(url_for('login'))
 
@@ -597,12 +844,40 @@ def delete_post(post_id):
 # Обработчик ошибки 404
 @app.errorhandler(404)
 def page_not_found(e):
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    user_id = session.get('user_id', '-')
+    path = request.path
+    
+    app.logger.warning(
+        f'404 ошибка: {path}',
+        extra={
+            'request_id': request_id,
+            'user_id': user_id,
+            'ip': ip
+        }
+    )
     return render_template('404.html'), 404
 
 
 # Обработчик ошибки 413 (слишком большой файл)
 @app.errorhandler(413)
 def request_entity_too_large(e):
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    user_id = session.get('user_id', '-')
+    path = request.path
+    
+    app.logger.warning(
+        f'413 ошибка (превышен размер файла): {path}',
+        extra={
+            'request_id': request_id,
+            'user_id': user_id,
+            'ip': ip
+        }
+    )
     flash('Размер файла превышает допустимый лимит (100 МБ).', 'error')
     return redirect(url_for('index'))
 
@@ -610,6 +885,21 @@ def request_entity_too_large(e):
 # Обработчик ошибки 500
 @app.errorhandler(500)
 def internal_server_error(e):
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    user_id = session.get('user_id', '-')
+    path = request.path
+    
+    app.logger.error(
+        f'500 ошибка: {path}, {str(e)}',
+        extra={
+            'request_id': request_id,
+            'user_id': user_id,
+            'ip': ip
+        },
+        exc_info=True
+    )
     return render_template('500.html'), 500
 
 
@@ -630,21 +920,53 @@ app.register_blueprint(admin_bp)
 
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+    
     # Проверяем, есть ли в сессии ID пользователя для подтверждения
     verifying_user_id = session.get('verifying_user_id')
     if not verifying_user_id:
+        security_logger.warning(
+            'Попытка подтверждения с истекшей/недействительной сессией',
+            extra={
+                'request_id': request_id,
+                'user_id': '-',
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Сессия подтверждения истекла или недействительна.', 'error')
         return redirect(url_for('register'))
     
     # Находим пользователя
     user = User.query.get(verifying_user_id)
     if not user:
+        security_logger.warning(
+            f'Попытка подтверждения для несуществующего пользователя ID: {verifying_user_id}',
+            extra={
+                'request_id': request_id,
+                'user_id': verifying_user_id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Пользователь не найден.', 'error')
         return redirect(url_for('register'))
     
     # Проверяем, не подтвержден ли уже пользователь
     if user.is_verified:
         session.pop('verifying_user_id', None)
+        security_logger.info(
+            f'Попытка повторного подтверждения уже подтвержденного аккаунта: {user.username}',
+            extra={
+                'request_id': request_id,
+                'user_id': user.id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Ваш аккаунт уже подтвержден. Пожалуйста, войдите.', 'info')
         return redirect(url_for('login'))
     
@@ -653,6 +975,16 @@ def verify_email():
         # Если срок истек, генерируем новый код и отправляем его
         verification_code = user.generate_verification_code()
         db.session.commit()
+        
+        security_logger.info(
+            f'Сгенерирован новый код подтверждения из-за истечения срока: {user.username}',
+            extra={
+                'request_id': request_id,
+                'user_id': user.id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         
         try:
             msg = Message(
@@ -672,7 +1004,17 @@ def verify_email():
             mail.send(msg)
             flash('Срок действия предыдущего кода истек. Новый код отправлен на вашу почту.', 'info')
         except Exception as e:
-            app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+            error_msg = f'Ошибка отправки письма: {str(e)}'
+            app.logger.error(error_msg, exc_info=True)
+            security_logger.error(
+                f'Ошибка отправки нового кода подтверждения: {user.username}, {str(e)}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
             flash(f'Произошла ошибка при отправке нового кода: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
             return redirect(url_for('register'))
     
@@ -682,8 +1024,26 @@ def verify_email():
         
         if not code:
             flash('Пожалуйста, введите код подтверждения.', 'error')
+            security_logger.warning(
+                f'Пустой код подтверждения: {user.username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         elif code != user.verification_code:
             flash('Неверный код подтверждения. Пожалуйста, проверьте и попробуйте снова.', 'error')
+            security_logger.warning(
+                f'Неверный код подтверждения: {user.username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
         else:
             # Код верный, подтверждаем пользователя
             user.is_verified = True
@@ -694,6 +1054,16 @@ def verify_email():
             # Удаляем данные подтверждения из сессии
             session.pop('verifying_user_id', None)
             
+            security_logger.info(
+                f'Успешное подтверждение аккаунта: {user.username}',
+                extra={
+                    'request_id': request_id,
+                    'user_id': user.id,
+                    'ip': ip,
+                    'user_agent': user_agent
+                }
+            )
+            
             flash('Регистрация успешно подтверждена! Теперь вы можете войти.', 'success')
             return redirect(url_for('login'))
     
@@ -702,27 +1072,69 @@ def verify_email():
 
 @app.route('/resend-verification', methods=['GET'])
 def resend_verification():
+    # Get request info for logging
+    request_id = getattr(request, 'request_id', str(uuid.uuid4())[:8])
+    ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+    
     # Проверяем, есть ли в сессии ID пользователя для подтверждения
     verifying_user_id = session.get('verifying_user_id')
     if not verifying_user_id:
+        security_logger.warning(
+            'Попытка повторной отправки кода с истекшей/недействительной сессией',
+            extra={
+                'request_id': request_id,
+                'user_id': '-',
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Сессия подтверждения истекла или недействительна.', 'error')
         return redirect(url_for('register'))
     
     # Находим пользователя
     user = User.query.get(verifying_user_id)
     if not user:
+        security_logger.warning(
+            f'Попытка повторной отправки кода для несуществующего пользователя ID: {verifying_user_id}',
+            extra={
+                'request_id': request_id,
+                'user_id': verifying_user_id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Пользователь не найден.', 'error')
         return redirect(url_for('register'))
     
     # Проверяем, не подтвержден ли уже пользователь
     if user.is_verified:
         session.pop('verifying_user_id', None)
+        security_logger.info(
+            f'Попытка повторной отправки кода для уже подтвержденного аккаунта: {user.username}',
+            extra={
+                'request_id': request_id,
+                'user_id': user.id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash('Ваш аккаунт уже подтвержден. Пожалуйста, войдите.', 'info')
         return redirect(url_for('login'))
     
     # Генерируем новый код и отправляем его
     verification_code = user.generate_verification_code()
     db.session.commit()
+    
+    security_logger.info(
+        f'Запрос на повторную отправку кода подтверждения: {user.username}',
+        extra={
+            'request_id': request_id,
+            'user_id': user.id,
+            'ip': ip,
+            'user_agent': user_agent
+        }
+    )
     
     try:
         msg = Message(
@@ -740,9 +1152,30 @@ def resend_verification():
         
         msg.body = verification_message
         mail.send(msg)
+        
+        security_logger.info(
+            f'Новый код подтверждения успешно отправлен: {user.username}',
+            extra={
+                'request_id': request_id,
+                'user_id': user.id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
+        
         flash('Новый код подтверждения отправлен на вашу почту.', 'info')
     except Exception as e:
-        app.logger.error(f'Ошибка отправки письма: {str(e)}', exc_info=True)
+        error_msg = f'Ошибка отправки письма: {str(e)}'
+        app.logger.error(error_msg, exc_info=True)
+        security_logger.error(
+            f'Ошибка повторной отправки кода подтверждения: {user.username}, {str(e)}',
+            extra={
+                'request_id': request_id,
+                'user_id': user.id,
+                'ip': ip,
+                'user_agent': user_agent
+            }
+        )
         flash(f'Произошла ошибка при отправке нового кода: {str(e)}. Пожалуйста, попробуйте еще раз.', 'error')
     
     return redirect(url_for('verify_email'))
