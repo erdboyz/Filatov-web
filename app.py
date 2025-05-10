@@ -23,7 +23,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(24)
 csrf = CSRFProtect(app)
 
 # Secure session configuration
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SECURE'] = True  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript from reading cookies
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Provides some CSRF protection
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout in seconds (1 hour)
@@ -1209,4 +1209,4 @@ def change_password():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Создаем таблицы в БД при запуске
-    app.run(debug=True)
+    app.run(debug=False)
